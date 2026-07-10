@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up for Campus Printing System</title>
+    <link rel="stylesheet" href="register.style.css">
+</head>
+<body>
+    <div class="register-container">
+        <h2>Create a new account</h2>
+        <p class="subtitle">It's quick and easy.</p>
+        <div class="divider"></div>
+        <div id="message" style="display:none; margin-bottom: 15px; padding: 10px; border-radius: 5px; text-align: center; font-weight: bold;"></div>
+        <form id="registerForm">
+            <div class="input-row">
+                <div class="input-group">
+                    <input type="text" id="firstName" placeholder="First name" required>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="lastName" placeholder="Surname" required>
+                </div>
+            </div>
+            <div class="input-group">
+                <input type="email" id="email" placeholder="Mobile number or email address" required>
+            </div>
+            <div class="input-group">
+                <input type="password" id="password" placeholder="New password" required>
+            </div>
+            <div class="radio-section">
+                <label class="section-label">Gender</label>
+                <div class="radio-container">
+                    <div class="radio-box">
+                        <label for="female">Female</label>
+                        <input type="radio" name="gender" id="female" value="female">
+                    </div>
+                    <div class="radio-box">
+                        <label for="male">Male</label>
+                        <input type="radio" name="gender" id="male" value="male">
+                    </div>
+                    <div class="radio-box">
+                        <label for="custom">Custom</label>
+                        <input type="radio" name="gender" id="custom" value="custom">
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="signup-btn">Sign Up</button>
+            <a href="index.html" class="already-account">Already have an account?</a>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const gender = document.querySelector('input[name="gender"]:checked');
+            const messageDiv = document.getElementById('message');
+
+            // Validation
+            if (!firstName || !lastName || !email || !password) {
+                showMessage('Please fill in all fields', 'error');
+                return;
+            }
+
+            if (!gender) {
+                showMessage('Please select a gender', 'error');
+                return;
+            }
+
+            if (password.length < 6) {
+                showMessage('Password must be at least 6 characters', 'error');
+                return;
+            }
+
+            // Check if user already exists
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            if (users.some(user => user.email === email)) {
+                showMessage('This email is already registered', 'error');
+                return;
+            }
+
+            // Create new user
+            const newUser = {
+                firstName,
+                lastName,
+                email,
+                password,
+                gender: gender.value,
+                registeredAt: new Date().toLocaleString()
+            };
+
+            // Store user
+            users.push(newUser);
+            localStorage.setItem('users', JSON.stringify(users));
+
+            // Show success message and redirect
+            showMessage('Registration successful! Redirecting to login...', 'success');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 2000);
+        });
+
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.style.display = 'block';
+            messageDiv.style.backgroundColor = type === 'success' ? '#28a745' : '#dc3545';
+            messageDiv.style.color = 'white';
+        }
+    </script>
+</body>
+</html>
