@@ -1,2 +1,7 @@
 node_modules/
 backend/data/users.json
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example

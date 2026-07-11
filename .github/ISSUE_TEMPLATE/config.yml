@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Team workflow guide
+    url: https://github.com/mehadi105/campus-print-system/blob/develop/docs/GIT_WORKFLOW.md
+    about: Read the Git branching and PR process before opening an issue.

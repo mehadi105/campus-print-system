@@ -1,17 +1,29 @@
 {
   "name": "campus-print-system",
-  "version": "1.0.0",
-  "description": "Campus Printing System - Backend API",
+  "version": "0.1.0",
+  "description": "Campus Printing System for university students",
   "main": "backend/server.js",
   "scripts": {
     "start": "node backend/server.js",
-    "dev": "node --watch backend/server.js"
+    "dev": "node --watch backend/server.js",
+    "prepare": "husky",
+    "commitlint": "commitlint --edit"
   },
-  "keywords": ["campus", "printing", "auth"],
+  "keywords": [
+    "campus",
+    "printing",
+    "auth",
+    "scrum"
+  ],
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "husky": "^9.1.7"
   }
 }
