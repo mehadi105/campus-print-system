@@ -1,0 +1,17 @@
+{
+  "name": "campus-print-system",
+  "version": "1.0.0",
+  "description": "Campus Printing System - Backend API",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node --watch backend/server.js"
+  },
+  "keywords": ["campus", "printing", "auth"],
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  }
+}
