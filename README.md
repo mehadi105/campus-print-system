@@ -2,7 +2,7 @@
 
 Campus Printing System for university students.
 
-## Backend API (SCRUM-19: Login)
+## Backend API (SCRUM-19: Login + SCRUM-20: Register)
 
 ### Setup
 
@@ -55,6 +55,58 @@ const response = await fetch('http://localhost:3000/api/auth/login', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ email, password })
+});
+const data = await response.json();
+```
+
+### Register API
+
+**Endpoint:** `POST /api/auth/register`
+
+**Request body:**
+```json
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "student@university.edu",
+  "password": "yourpassword",
+  "gender": "male"
+}
+```
+
+**Success response (201):**
+```json
+{
+  "success": true,
+  "message": "Registration successful",
+  "user": {
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "student@university.edu",
+    "gender": "male"
+  }
+}
+```
+
+**Error responses:**
+- `400` - Missing fields, missing gender, or password too short
+- `409` - Email already registered
+
+### Frontend Integration (Register)
+
+Matches Imtiaz's register page (`register.html`) fields:
+- `firstName` - First name
+- `lastName` - Surname
+- `email` - Email address
+- `password` - New password (min 6 characters)
+- `gender` - `female`, `male`, or `custom`
+
+Example fetch from register page:
+```javascript
+const response = await fetch('http://localhost:3000/api/auth/register', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ firstName, lastName, email, password, gender: gender.value })
 });
 const data = await response.json();
 ```
