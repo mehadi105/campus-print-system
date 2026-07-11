@@ -1,0 +1,116 @@
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f2f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+
+.login-container {
+    background-color: white;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.1);
+    width: 380px;
+    text-align: center;
+}
+
+
+h2 {
+    color: #1877f2;
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+/* ইনপুট গ্রুপ */
+.input-group {
+    margin-bottom: 15px;
+    text-align: left;
+}
+
+
+.input-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #606770;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+
+.input-group input {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 17px;
+    border: 1px solid #dddfe2;
+    border-radius: 6px;
+    box-sizing: border-box;
+    outline: none;
+}
+
+.input-group input:focus {
+    border-color: #1b74e4;
+    box-shadow: 0 0 0 2px #e7f3ff;
+}
+
+
+.login-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+    background-color: #1877f2;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.login-btn:hover {
+    background-color: #166fe5;
+}
+
+
+.forgot-password {
+    display: block;
+    margin-top: 15px;
+    color: #1877f2;
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.forgot-password:hover {
+    text-decoration: underline;
+}
+
+
+.create-account-btn {
+    display: inline-block;
+    margin-top: 25px;
+    padding: 14px 20px;
+    font-size: 17px;
+    font-weight: bold;
+    color: white;
+    background-color: #42b72a;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.create-account-btn:hover {
+    background-color: #36a420;
+}
+
+
+.divider {
+    border-top: 1px solid #dddfe2;
+    margin: 20px 0;
+}
