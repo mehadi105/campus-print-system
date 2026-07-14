@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Printing System - Dashboard</title>
+    <link rel="stylesheet" href="dashboard.style.css">
+</head>
+<body data-page="dashboard">
+    <div class="dashboard-shell">
+        <header class="topbar">
+            <div>
+                <p class="eyebrow">Student Portal</p>
+                <h1>Welcome back, <span id="welcomeName">Student</span></h1>
+            </div>
+            <button id="logoutBtn" class="logout-btn">Logout</button>
+        </header>
+
+        <section class="hero-card">
+            <div>
+                <p class="eyebrow">Dashboard</p>
+                <h2 id="welcomeMessage">Your printing tasks are ready to go.</h2>
+                <p>Manage your print jobs, track status, and access your campus resources from one place.</p>
+            </div>
+            <button class="primary-btn">New Print Request</button>
+        </section>
+
+        <section class="stats-grid">
+            <article class="stat-card">
+                <h3>Pending Jobs</h3>
+                <p class="stat-number">3</p>
+            </article>
+            <article class="stat-card">
+                <h3>Completed</h3>
+                <p class="stat-number">12</p>
+            </article>
+            <article class="stat-card">
+                <h3>Balance</h3>
+                <p class="stat-number">$24</p>
+            </article>
+        </section>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
