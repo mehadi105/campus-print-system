@@ -3,44 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Campus Printing System - Dashboard</title>
+    <title>Campus Print Dashboard</title>
     <link rel="stylesheet" href="dashboard.style.css">
 </head>
-<body data-page="dashboard">
-    <div class="dashboard-shell">
-        <header class="topbar">
-            <div>
-                <p class="eyebrow">Student Portal</p>
-                <h1>Welcome back, <span id="welcomeName">Student</span></h1>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand-block">
+                <div class="brand-icon">🖨️</div>
+                <div>
+                    <h1>Campus Print</h1>
+                    <p>Student Workspace</p>
+                </div>
             </div>
-            <button id="logoutBtn" class="logout-btn">Logout</button>
-        </header>
 
-        <section class="hero-card">
-            <div>
-                <p class="eyebrow">Dashboard</p>
-                <h2 id="welcomeMessage">Your printing tasks are ready to go.</h2>
-                <p>Manage your print jobs, track status, and access your campus resources from one place.</p>
+            <nav class="nav-links" aria-label="Sidebar navigation">
+                <a class="nav-item active" href="#">
+                    <span class="nav-icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+                <a class="nav-item" href="#">
+                    <span class="nav-icon">📝</span>
+                    <span>New Print Request</span>
+                </a>
+                <a class="nav-item" href="#">
+                    <span class="nav-icon">🗂️</span>
+                    <span>Print History</span>
+                </a>
+                <a class="nav-item" href="#">
+                    <span class="nav-icon">💳</span>
+                    <span>Wallet &amp; Billing</span>
+                </a>
+                <a class="nav-item" href="#">
+                    <span class="nav-icon">⚙️</span>
+                    <span>Settings</span>
+                </a>
+            </nav>
+
+            <div class="profile-card">
+                <div class="avatar">AN</div>
+                <div>
+                    <h3>Ava Nguyen</h3>
+                    <p>4th Year • CS Student</p>
+                </div>
             </div>
-            <button class="primary-btn">New Print Request</button>
-        </section>
+        </aside>
 
-        <section class="stats-grid">
-            <article class="stat-card">
-                <h3>Pending Jobs</h3>
-                <p class="stat-number">3</p>
-            </article>
-            <article class="stat-card">
-                <h3>Completed</h3>
-                <p class="stat-number">12</p>
-            </article>
-            <article class="stat-card">
-                <h3>Balance</h3>
-                <p class="stat-number">$24</p>
-            </article>
-        </section>
+        <main class="main-panel">
+            <header class="topbar">
+                <label class="search-box" for="search">
+                    <span class="search-icon">🔎</span>
+                    <input id="search" type="text" placeholder="Search documents, requests, or files">
+                </label>
+
+                <div class="topbar-actions">
+                    <button class="create-btn">＋ Create New Print</button>
+                    <button class="icon-btn" aria-label="Notifications">🔔</button>
+                </div>
+            </header>
+
+            <section class="hero-strip">
+                <div>
+                    <p class="eyebrow">Smart printing workspace</p>
+                    <h2>Good morning, Ava</h2>
+                    <p>Your print queue is running smoothly and your recent requests are ready to review.</p>
+                </div>
+                <div class="hero-badge">⚡ 24/7 Queue Monitor</div>
+            </section>
+
+            <section class="stats-grid" aria-label="Dashboard summary cards">
+                <article class="stat-card accent-blue">
+                    <div class="stat-icon">💰</div>
+                    <div>
+                        <p class="stat-label">Current Wallet Balance</p>
+                        <h3>৳ 1,250</h3>
+                    </div>
+                </article>
+
+                <article class="stat-card accent-red">
+                    <div class="stat-icon">⏳</div>
+                    <div>
+                        <p class="stat-label">Live Pending Prints</p>
+                        <h3 class="text-danger">4 Orders</h3>
+                    </div>
+                </article>
+
+                <article class="stat-card accent-green">
+                    <div class="stat-icon">✅</div>
+                    <div>
+                        <p class="stat-label">Total Completed Prints</p>
+                        <h3 class="text-success">128 Tasks</h3>
+                    </div>
+                </article>
+            </section>
+
+            <section class="table-card">
+                <div class="table-header">
+                    <div>
+                        <p class="eyebrow">Live activity</p>
+                        <h3>Recent Printing Activity</h3>
+                    </div>
+                    <a href="#" class="view-link">View All</a>
+                </div>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Document Name</th>
+                                <th>Submitted Date</th>
+                                <th>Total Pages</th>
+                                <th>Estimated Cost</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Final Report Draft</td>
+                                <td>15 Jul, 2026</td>
+                                <td>48</td>
+                                <td>৳ 120</td>
+                                <td><span class="status-badge pending">Pending</span></td>
+                            </tr>
+                            <tr>
+                                <td>Lab Assignment 08</td>
+                                <td>14 Jul, 2026</td>
+                                <td>24</td>
+                                <td>৳ 72</td>
+                                <td><span class="status-badge processing">Processing</span></td>
+                            </tr>
+                            <tr>
+                                <td>Research Proposal</td>
+                                <td>13 Jul, 2026</td>
+                                <td>96</td>
+                                <td>৳ 240</td>
+                                <td><span class="status-badge completed">Completed</span></td>
+                            </tr>
+                            <tr>
+                                <td>Lecture Notes Pack</td>
+                                <td>12 Jul, 2026</td>
+                                <td>32</td>
+                                <td>৳ 88</td>
+                                <td><span class="status-badge processing">Processing</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
     </div>
-
-    <script src="script.js"></script>
 </body>
 </html>
