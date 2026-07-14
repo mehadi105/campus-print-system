@@ -6,7 +6,7 @@
     <title>Campus Print Dashboard</title>
     <link rel="stylesheet" href="dashboard.style.css">
 </head>
-<body>
+<body data-page="dashboard">
     <div class="app-shell">
         <aside class="sidebar">
             <div class="brand-block">
@@ -43,7 +43,7 @@
             <div class="profile-card">
                 <div class="avatar">AN</div>
                 <div>
-                    <h3>Ava Nguyen</h3>
+                    <h3 class="student-name-display">Ava Nguyen</h3>
                     <p>4th Year • CS Student</p>
                 </div>
             </div>
@@ -59,6 +59,8 @@
                 <div class="topbar-actions">
                     <button class="create-btn">＋ Create New Print</button>
                     <button class="icon-btn" aria-label="Notifications">🔔</button>
+                    <button class="profile-avatar-btn" id="profileAvatarBtn" type="button" aria-label="Edit profile">AN</button>
+                    <button class="logout-btn" id="logoutBtn" type="button">Logout</button>
                 </div>
             </header>
 
@@ -71,12 +73,86 @@
                 <div class="hero-badge">⚡ 24/7 Queue Monitor</div>
             </section>
 
+            <section class="profile-section" aria-label="Student information profile">
+                <div class="profile-card-main">
+                    <div class="profile-header">
+                        <div class="profile-avatar">AN</div>
+                        <div>
+                            <p class="eyebrow">Student Information</p>
+                            <h3 class="student-name-display"></h3>
+                            <p class="profile-meta">Department of <span id="student-dept"></span> • Roll ID: <span id="student-id"></span></p>
+                        </div>
+                    </div>
+
+                    <div class="info-grid">
+                        <article class="info-item">
+                            <span class="info-icon">📧</span>
+                            <div>
+                                <p class="info-label">Email</p>
+                                <p class="info-value" id="student-email"></p>
+                            </div>
+                        </article>
+
+                        <article class="info-item">
+                            <span class="info-icon">📱</span>
+                            <div>
+                                <p class="info-label">Phone Number</p>
+                                <p class="info-value">+880 1712 345678</p>
+                            </div>
+                        </article>
+
+                        <article class="info-item">
+                            <span class="info-icon">🎓</span>
+                            <div>
+                                <p class="info-label">Current Semester</p>
+                                <p class="info-value" id="student-semester"></p>
+                            </div>
+                        </article>
+
+                        <article class="info-item">
+                            <span class="info-icon">🗓️</span>
+                            <div>
+                                <p class="info-label">Session</p>
+                                <p class="info-value" id="student-session"></p>
+                            </div>
+                        </article>
+
+                        <article class="info-item">
+                            <span class="info-icon">🏠</span>
+                            <div>
+                                <p class="info-label">Hall / Dormitory</p>
+                                <p class="info-value">North Hall Block A</p>
+                            </div>
+                        </article>
+
+                        <article class="info-item">
+                            <span class="info-icon">✅</span>
+                            <div>
+                                <p class="info-label">Account Status</p>
+                                <p class="info-value"><span class="status-pill" id="student-status"></span></p>
+                            </div>
+                        </article>
+                    </div>
+
+                    <div class="quota-card">
+                        <div class="quota-info">
+                            <p class="eyebrow">Monthly Quota</p>
+                            <h4 id="quota-text"></h4>
+                            <p>You're currently using 50% of your monthly print allowance.</p>
+                        </div>
+                        <div class="quota-bar" aria-label="Print quota progress">
+                            <div class="quota-fill" id="quota-progress"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <section class="stats-grid" aria-label="Dashboard summary cards">
                 <article class="stat-card accent-blue">
                     <div class="stat-icon">💰</div>
                     <div>
                         <p class="stat-label">Current Wallet Balance</p>
-                        <h3>৳ 1,250</h3>
+                        <h3 id="wallet-balance"></h3>
                     </div>
                 </article>
 
@@ -152,5 +228,7 @@
             </section>
         </main>
     </div>
+    <script src="script.js"></script>
+    <script src="profile.js"></script>
 </body>
 </html>
