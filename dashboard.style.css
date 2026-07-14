@@ -1,0 +1,99 @@
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #eef4ff 0%, #f8fafc 100%);
+    color: #1f2937;
+}
+
+.dashboard-shell {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 20px 50px;
+}
+
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.eyebrow {
+    margin: 0 0 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-size: 12px;
+    font-weight: 700;
+    color: #2563eb;
+}
+
+.topbar h1, .hero-card h2 {
+    margin: 0;
+    font-size: 28px;
+}
+
+.logout-btn, .primary-btn {
+    border: none;
+    border-radius: 999px;
+    padding: 10px 16px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.logout-btn {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.primary-btn {
+    background: #2563eb;
+    color: white;
+}
+
+.hero-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+    margin-bottom: 24px;
+}
+
+.hero-card p {
+    margin: 10px 0 0;
+    color: #6b7280;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+}
+
+.stat-number {
+    font-size: 30px;
+    font-weight: 700;
+    margin: 8px 0 0;
+    color: #2563eb;
+}
+
+@media (max-width: 768px) {
+    .hero-card, .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
