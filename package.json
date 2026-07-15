@@ -5,9 +5,11 @@
   "main": "backend/server.js",
   "scripts": {
     "start": "node backend/server.js",
-    "dev": "node --watch backend/server.js"
+    "dev": "node --watch backend/server.js",
+    "test": "node --test backend/tests/dashboard.test.js",
+    "test:dashboard": "node --test backend/tests/dashboard.test.js"
   },
-  "keywords": ["campus", "printing", "auth"],
+  "keywords": ["campus", "printing", "auth", "dashboard"],
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^2.4.3",
