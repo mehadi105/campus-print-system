@@ -130,3 +130,11 @@ const response = await fetch(
 );
 const data = await response.json();
 ```
+
+### Dashboard Tests (SCRUM-26)
+
+```bash
+npm test
+```
+
+Covers missing email, unknown student, and successful dashboard payload for Imtiaj's UI fields.
