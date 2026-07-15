@@ -110,3 +110,23 @@ const response = await fetch('http://localhost:3000/api/auth/register', {
 });
 const data = await response.json();
 ```
+
+### Dashboard API (SCRUM-24)
+
+**Endpoint:** `GET /api/dashboard?email=student@university.edu`
+
+Returns student profile, print quota, wallet, and recent activity for Imtiaj's dashboard UI.
+
+**Success response (200):** student object + stats + recentActivity
+
+**Error responses:**
+- `400` - Missing email
+- `404` - Student not found
+
+Example:
+```javascript
+const response = await fetch(
+  'http://localhost:3000/api/dashboard?email=' + encodeURIComponent(email)
+);
+const data = await response.json();
+```
