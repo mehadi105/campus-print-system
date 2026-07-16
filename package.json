@@ -6,8 +6,9 @@
   "scripts": {
     "start": "node backend/server.js",
     "dev": "node --watch backend/server.js",
-    "test": "node --test backend/tests/dashboard.test.js",
-    "test:dashboard": "node --test backend/tests/dashboard.test.js"
+    "test": "node --test backend/tests/dashboard.test.js backend/tests/upload.test.js",
+    "test:dashboard": "node --test backend/tests/dashboard.test.js",
+    "test:upload": "node --test backend/tests/upload.test.js"
   },
   "keywords": [
     "campus",
