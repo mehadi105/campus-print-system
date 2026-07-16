@@ -4,6 +4,7 @@ const path = require('path');
 const loginRoutes = require('./routes/login');
 const registerRoutes = require('./routes/register');
 const dashboardRoutes = require('./routes/dashboard');
+const uploadRoutes = require('./routes/upload');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -16,6 +17,7 @@ app.use(express.static(path.join(__dirname, '..')));
 app.use('/api/auth', loginRoutes);
 app.use('/api/auth', registerRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/uploads', uploadRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Campus Print System API is running' });

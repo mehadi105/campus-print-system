@@ -138,3 +138,15 @@ npm test
 ```
 
 Covers missing email, unknown student, and successful dashboard payload for Imtiaj's UI fields.
+
+### File Upload API (SCRUM-30)
+
+**Endpoint:** `POST /api/uploads`
+
+Multipart form fields:
+- `file` — document file
+- `email` — student email (owner)
+
+**Success response (201):** uploaded document metadata
+
+Files are stored under `backend/uploads/` and metadata in the documents store for later listing.
