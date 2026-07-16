@@ -150,3 +150,11 @@ Multipart form fields:
 **Success response (201):** uploaded document metadata
 
 Files are stored under `backend/uploads/` and metadata in the documents store for later listing.
+
+### Upload Validation (SCRUM-31)
+
+Enforced limits matching the upload UI:
+- Allowed types: `.pdf`, `.docx`, `.pptx`
+- Max size: **25 MB** per file
+
+Invalid type/size requests return `400` with a clear message.
