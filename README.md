@@ -158,3 +158,11 @@ Enforced limits matching the upload UI:
 - Max size: **25 MB** per file
 
 Invalid type/size requests return `400` with a clear message.
+
+### Upload Feature Tests (SCRUM-33)
+
+```bash
+npm run test:upload
+```
+
+Covers successful PDF upload, missing email, and rejected file types.
