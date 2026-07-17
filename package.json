@@ -9,7 +9,7 @@
     "dev": "node --watch backend/server.js",
     "prepare": "husky",
     "commitlint": "commitlint --edit",
-    "test": "node --test backend/tests/*.test.js",
+    "test": "node --test --test-concurrency=1 backend/tests/*.test.js",
     "test:dashboard": "node --test backend/tests/dashboard.test.js",
     "test:upload": "node --test backend/tests/upload.test.js",
     "test:documents": "node --test backend/tests/documentManagement.test.js"
