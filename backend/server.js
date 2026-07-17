@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const loginRoutes = require('./routes/login');
 const registerRoutes = require('./routes/register');
+const documentRoutes = require('./routes/documents');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,11 +15,16 @@ app.use(express.static(path.join(__dirname, '..')));
 
 app.use('/api/auth', loginRoutes);
 app.use('/api/auth', registerRoutes);
+app.use('/api/documents', documentRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Campus Print System API is running' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
