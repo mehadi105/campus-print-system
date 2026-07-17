@@ -1,5 +1,7 @@
 node_modules/
 backend/data/users.json
+backend/data/documents.json
+backend/uploads/
 .DS_Store
 *.log
 .env
