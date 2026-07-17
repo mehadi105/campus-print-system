@@ -50,6 +50,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const walletBalance = document.getElementById('wallet-balance');
         const avatarButtons = document.querySelectorAll('.profile-avatar-btn, .avatar');
 
+        const quotaTextBilling = document.getElementById('quota-text-billing');
+        const quotaProgressBilling = document.getElementById('quota-progress-billing');
+        const walletBalanceBilling = document.getElementById('wallet-balance-billing');
+
         if (quotaText) {
             const used = student.usedPages || 50;
             const total = student.totalPages || 100;
@@ -66,6 +70,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (walletBalance) {
             walletBalance.textContent = student.walletBalance ? `৳ ${student.walletBalance}` : '৳ 0';
+        }
+
+        if (quotaTextBilling) {
+            const used = student.usedPages || 50;
+            const total = student.totalPages || 100;
+            const left = Math.max(total - used, 0);
+            quotaTextBilling.textContent = `Free Pages Left: ${left} / ${total}`;
+        }
+
+        if (quotaProgressBilling) {
+            const used = student.usedPages || 50;
+            const total = student.totalPages || 100;
+            const percent = Math.min(Math.max((used / total) * 100, 0), 100);
+            quotaProgressBilling.style.width = `${percent}%`;
+        }
+
+        if (walletBalanceBilling) {
+            walletBalanceBilling.textContent = student.walletBalance ? `৳ ${student.walletBalance}` : '৳ 0';
         }
 
         avatarButtons.forEach((button) => {
@@ -89,6 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderStudentData(currentStudent);
 
         const profileAvatarBtn = document.getElementById('profileAvatarBtn');
+        const sidebarProfileCard = document.getElementById('sidebarProfileCard');
         const logoutBtn = document.getElementById('logoutBtn');
         const modal = document.getElementById('profileModal');
         const closeModalBtn = document.getElementById('closeModalBtn');
@@ -98,16 +121,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const editEmail = document.getElementById('editEmail');
         const editDepartment = document.getElementById('editDepartment');
 
-        if (profileAvatarBtn) {
-            profileAvatarBtn.addEventListener('click', () => {
-                if (editName && editEmail && editDepartment) {
-                    editName.value = currentStudent.fullName || '';
-                    editEmail.value = currentStudent.email || '';
-                    editDepartment.value = currentStudent.department || '';
-                }
-                modal?.classList.add('open');
-            });
-        }
+        const openProfileModal = () => {
+            const refreshedStudent = JSON.parse(localStorage.getItem('currentStudent') || 'null') || currentStudent;
+            if (editName && editEmail && editDepartment) {
+                editName.value = refreshedStudent.fullName || '';
+                editEmail.value = refreshedStudent.email || '';
+                editDepartment.value = refreshedStudent.department || '';
+            }
+            modal?.classList.add('open');
+        };
+
+        profileAvatarBtn?.addEventListener('click', openProfileModal);
+        sidebarProfileCard?.addEventListener('click', openProfileModal);
 
         const closeModal = () => modal?.classList.remove('open');
 
@@ -122,8 +147,9 @@ document.addEventListener('DOMContentLoaded', () => {
         editProfileForm?.addEventListener('submit', (event) => {
             event.preventDefault();
 
+            const refreshedStudent = JSON.parse(localStorage.getItem('currentStudent') || 'null') || currentStudent;
             const updatedStudent = {
-                ...currentStudent,
+                ...refreshedStudent,
                 fullName: editName.value.trim(),
                 email: editEmail.value.trim(),
                 department: editDepartment.value.trim()
