@@ -264,6 +264,26 @@
                                     </li>
                                 </ul>
                             </div>
+
+                            <!-- Document Library (SCRUM-35) -->
+                            <div class="library-card">
+                                <div class="library-header">
+                                    <div>
+                                        <p class="eyebrow">Saved documents</p>
+                                        <h3>My Saved Documents</h3>
+                                    </div>
+                                    <span class="library-count" id="libraryCountText">0 files</span>
+                                </div>
+                                
+                                <div class="library-grid" id="libraryGrid">
+                                    <!-- Dynamic cards injected via JavaScript -->
+                                    <div class="library-empty-state" id="libraryEmptyState">
+                                        <div class="empty-state-icon">📂</div>
+                                        <p class="empty-state-title">No documents saved yet</p>
+                                        <p class="empty-state-subtitle">Files uploaded through the drop zone will appear here.</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <aside class="upload-sidebar" aria-label="Printing guidelines and cost summary">

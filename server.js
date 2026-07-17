@@ -198,6 +198,26 @@ app.get('/api/documents', authenticateToken, (req, res) => {
     });
 });
 
+// 5. Delete a document (SCRUM-35)
+app.delete('/api/documents/:id', authenticateToken, (req, res) => {
+    const docId = req.params.id;
+    const userId = req.user.id;
+
+    const sql = `DELETE FROM documents WHERE id = ? AND userId = ?`;
+    db.run(sql, [docId, userId], function (err) {
+        if (err) {
+            return res.status(500).json({ error: 'Database error: ' + err.message });
+        }
+        if (this.changes === 0) {
+            return res.status(404).json({ error: 'Document not found or access denied.' });
+        }
+        res.json({
+            message: 'Document deleted successfully from database.'
+        });
+    });
+});
+
+
 // ── Serving static files ──
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));

@@ -382,6 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 updateQueueCount();
+                renderDocumentLibrary();
                 refreshRecentActivitiesTable();
             })
             .catch(err => {
@@ -406,33 +407,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 updateQueueCount();
 
-                // Append local mock row to recent activities table
-                const tbody = document.querySelector('.table-wrapper table tbody');
-                if (tbody) {
-                    const date = new Date().toLocaleDateString('en-GB', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric'
-                    });
-                    const pages = Math.floor(Math.random() * 20) + 5;
-                    const cost = pages * 3;
-
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${file.name}</td>
-                        <td>${date}</td>
-                        <td>${pages}</td>
-                        <td>৳ ${cost}</td>
-                        <td><span class="status-badge processing">Ready to Print</span></td>
-                    `;
-                    
-                    // If the first child is a mocked row (e.g. "Final Report Draft"), clear it first
-                    if (tbody.children.length === 4 && tbody.innerHTML.includes('Final Report Draft')) {
-                        tbody.innerHTML = '';
-                    }
-                    tbody.prepend(tr);
-                }
+                // Save mock document locally
+                const localDoc = {
+                    id: 'local_' + Date.now(),
+                    fileName: file.name,
+                    fileSize: sizeStr,
+                    fileUrl: documentData.fileUrl,
+                    status: 'Ready to Print',
+                    uploadedAt: new Date().toISOString()
+                };
+                saveMockDocumentLocally(localDoc);
+                renderDocumentLibrary();
+                refreshRecentActivitiesTable();
             });
+        };
+
+        const saveMockDocumentLocally = (doc) => {
+            const localDocs = JSON.parse(localStorage.getItem('uploadedDocuments') || '[]');
+            localDocs.unshift(doc);
+            localStorage.setItem('uploadedDocuments', JSON.stringify(localDocs));
         };
 
         const updateQueueCount = () => {
@@ -441,6 +434,137 @@ document.addEventListener('DOMContentLoaded', () => {
                 const count = uploadQueue.querySelectorAll('.queue-item').length;
                 countLabel.textContent = `${count} file${count !== 1 ? 's' : ''}`;
             }
+        };
+
+        // ── Document Library Rendering & Deletion Logic (SCRUM-35) ──
+        const getFileIconClass = (filename) => {
+            const ext = getFileExt(filename).replace('.', '');
+            if (['pdf', 'docx', 'pptx'].includes(ext)) return ext;
+            return 'pdf';
+        };
+
+        const getFileIconSvg = (ext) => {
+            if (ext === 'docx') {
+                return '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2 5 5h-5V4zM9 13h6v2H9v-2zm0 4h4v2H9v-2z"/></svg>';
+            } else if (ext === 'pptx') {
+                return '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2 5 5h-5V4zM8 11h8v2H8v-2zm0 4h6v2H8v-2z"/></svg>';
+            }
+            return '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2 5 5h-5V4zM8 13h8v2H8v-2zm0 4h5v2H8v-2z"/></svg>';
+        };
+
+        const deleteDocument = (docId) => {
+            if (!confirm('Are you sure you want to delete this document?')) return;
+
+            fetch(`/api/documents/${docId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('Delete request failed');
+                return res.json();
+            })
+            .then(() => {
+                renderDocumentLibrary();
+                refreshRecentActivitiesTable();
+            })
+            .catch(err => {
+                console.warn('API delete failed/offline, performing local removal...', err);
+                const localDocs = JSON.parse(localStorage.getItem('uploadedDocuments') || '[]');
+                const filteredDocs = localDocs.filter(d => String(d.id) !== String(docId));
+                localStorage.setItem('uploadedDocuments', JSON.stringify(filteredDocs));
+                renderDocumentLibrary();
+                refreshRecentActivitiesTable();
+            });
+        };
+
+        const renderDocumentLibrary = () => {
+            const grid = document.getElementById('libraryGrid');
+            const countText = document.getElementById('libraryCountText');
+            if (!grid || !countText) return;
+
+            fetch('/api/documents', {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(res => res.ok ? res.json() : [])
+            .then(docs => {
+                const localDocs = JSON.parse(localStorage.getItem('uploadedDocuments') || '[]');
+                
+                const docMap = new Map();
+                localDocs.forEach(d => docMap.set(d.fileName + '_' + d.fileSize, d));
+                docs.forEach(d => docMap.set(d.fileName + '_' + d.fileSize, d));
+                
+                const mergedDocs = Array.from(docMap.values()).sort((a, b) => {
+                    return new Date(b.uploadedAt) - new Date(a.uploadedAt);
+                });
+
+                if (mergedDocs.length === 0) {
+                    grid.innerHTML = `
+                        <div class="library-empty-state" id="libraryEmptyState">
+                            <div class="empty-state-icon">📂</div>
+                            <p class="empty-state-title">No documents saved yet</p>
+                            <p class="empty-state-subtitle">Files uploaded through the drop zone will appear here.</p>
+                        </div>
+                    `;
+                    countText.textContent = '0 files';
+                    return;
+                }
+
+                countText.textContent = `${mergedDocs.length} file${mergedDocs.length !== 1 ? 's' : ''}`;
+                grid.innerHTML = '';
+
+                mergedDocs.forEach(doc => {
+                    const ext = getFileIconClass(doc.fileName);
+                    const iconSvg = getFileIconSvg(ext);
+                    const formattedDate = new Date(doc.uploadedAt).toLocaleDateString('en-GB', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                    });
+
+                    const card = document.createElement('div');
+                    card.className = 'document-card';
+                    card.innerHTML = `
+                        <div class="document-card-top">
+                            <div class="document-icon ${ext}">
+                                ${iconSvg}
+                            </div>
+                            <div class="document-details">
+                                <h4 class="document-name" title="${doc.fileName}">${doc.fileName}</h4>
+                                <div class="document-meta">
+                                    <span>${doc.fileSize}</span>
+                                    <span>•</span>
+                                    <span>${formattedDate}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="document-card-bottom">
+                            <button type="button" class="print-file-btn">🖨️ Print Now</button>
+                            <button type="button" class="delete-file-btn" data-id="${doc.id}" aria-label="Delete document">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    `;
+
+                    card.querySelector('.delete-file-btn').addEventListener('click', () => {
+                        deleteDocument(doc.id);
+                    });
+
+                    card.querySelector('.print-file-btn').addEventListener('click', () => {
+                        alert(`Configuring printing parameters for: ${doc.fileName}\n(Directing to Print Order parameters...)`);
+                    });
+
+                    grid.appendChild(card);
+                });
+            })
+            .catch(err => {
+                console.error('Error rendering document library:', err);
+            });
         };
 
         const refreshRecentActivitiesTable = () => {
@@ -453,9 +577,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tbody = document.querySelector('.table-wrapper table tbody');
                 if (!tbody) return;
 
-                if (docs && docs.length > 0) {
+                const localDocs = JSON.parse(localStorage.getItem('uploadedDocuments') || '[]');
+                
+                const docMap = new Map();
+                localDocs.forEach(d => docMap.set(d.fileName + '_' + d.fileSize, d));
+                docs.forEach(d => docMap.set(d.fileName + '_' + d.fileSize, d));
+                
+                const mergedDocs = Array.from(docMap.values()).sort((a, b) => {
+                    return new Date(b.uploadedAt) - new Date(a.uploadedAt);
+                });
+
+                if (mergedDocs.length > 0) {
                     tbody.innerHTML = '';
-                    docs.forEach(doc => {
+                    mergedDocs.forEach(doc => {
                         const date = new Date(doc.uploadedAt || Date.now()).toLocaleDateString('en-GB', {
                             day: 'numeric',
                             month: 'short',
@@ -470,7 +604,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <td>${date}</td>
                             <td>${pages}</td>
                             <td>৳ ${cost}</td>
-                            <td><span class="status-badge processing">${doc.status}</span></td>
+                            <td><span class="status-badge processing">${doc.status || 'Ready to Print'}</span></td>
                         `;
                         tbody.appendChild(tr);
                     });
@@ -487,7 +621,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Initialize table
+        // Initialize table & library rendering
+        renderDocumentLibrary();
         refreshRecentActivitiesTable();
     }
 });
