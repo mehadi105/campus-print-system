@@ -1642,3 +1642,205 @@ tbody tr:hover {
         background: #334155;
     }
 }
+
+/* ── Document Library (SCRUM-35) ── */
+
+.library-card {
+    background: var(--surface);
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    padding: 24px;
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.library-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 16px;
+}
+
+.library-count {
+    background: var(--primary-soft);
+    color: var(--primary);
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 99px;
+}
+
+.library-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 18px;
+    min-height: 120px;
+}
+
+.library-empty-state {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 20px;
+    background: var(--surface-2);
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    color: var(--muted);
+}
+
+.empty-state-icon {
+    font-size: 2.5rem;
+    margin-bottom: 12px;
+}
+
+.empty-state-title {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text);
+    margin-bottom: 4px;
+}
+
+.empty-state-subtitle {
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+.document-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), 
+                box-shadow 0.22s cubic-bezier(0.4, 0, 0.2, 1), 
+                border-color 0.22s ease;
+}
+
+.document-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--primary-soft);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.04);
+}
+
+.document-card-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.document-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.document-icon.pdf {
+    background: #ef4444;
+}
+
+.document-icon.docx {
+    background: #3b82f6;
+}
+
+.document-icon.pptx {
+    background: #f59e0b;
+}
+
+.document-icon svg {
+    width: 22px;
+    height: 22px;
+}
+
+.document-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+}
+
+.document-name {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.document-meta {
+    font-size: 0.76rem;
+    color: var(--muted);
+    display: flex;
+    gap: 8px;
+}
+
+.document-card-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+    margin-top: 4px;
+}
+
+.print-file-btn {
+    border: none;
+    background: var(--primary-soft);
+    color: var(--primary);
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.print-file-btn:hover {
+    background: var(--primary);
+    color: white;
+}
+
+.delete-file-btn {
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    padding: 6px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s, background 0.15s;
+}
+
+.delete-file-btn:hover {
+    color: var(--danger);
+    background: var(--danger-soft);
+}
+
+.delete-file-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+    .library-empty-state {
+        background: #1e293b;
+        border-color: #334155;
+    }
+}
