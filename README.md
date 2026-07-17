@@ -157,3 +157,17 @@ const response = await fetch(
 const data = await response.json();
 // data.documents → render list / cards
 ```
+
+### Document Management Tests (SCRUM-39)
+
+Run the automated tests for document storage and the view documents API:
+
+```bash
+npm test
+```
+
+Coverage includes:
+- add / list / filter / find / delete in the document store
+- `GET /api/documents` and `GET /api/documents/:id`
+- email filter used by the document list UI
+- end-to-end management flow: add → list → view → delete
