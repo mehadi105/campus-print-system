@@ -185,6 +185,16 @@ Multipart fields: `file`, `email`. Allowed: `.pdf`, `.docx`, `.pptx` (max 25 MB)
 npm test
 ```
 
+### Documents API
+
+**List:** `GET /api/documents?email=student@university.edu`  
+**Get one:** `GET /api/documents/:id`
+
+```bash
+npm run test:documents
+```
+
 ## License
 
 ISC — see [LICENSE](LICENSE).
+
