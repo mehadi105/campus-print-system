@@ -90,6 +90,11 @@ document.addEventListener('DOMContentLoaded', () => {
             walletBalanceBilling.textContent = student.walletBalance ? `৳ ${student.walletBalance}` : '৳ 0';
         }
 
+        const walletBalanceUpload = document.getElementById('upload-wallet-balance');
+        if (walletBalanceUpload) {
+            walletBalanceUpload.textContent = student.walletBalance ? `৳ ${student.walletBalance}` : '৳ 0';
+        }
+
         avatarButtons.forEach((button) => {
             button.textContent = getInitials(student.fullName);
         });

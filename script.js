@@ -574,9 +574,6 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .then(res => res.ok ? res.json() : [])
             .then(docs => {
-                const tbody = document.querySelector('.table-wrapper table tbody');
-                if (!tbody) return;
-
                 const localDocs = JSON.parse(localStorage.getItem('uploadedDocuments') || '[]');
                 
                 const docMap = new Map();
@@ -587,9 +584,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     return new Date(b.uploadedAt) - new Date(a.uploadedAt);
                 });
 
-                if (mergedDocs.length > 0) {
+                const dashboardTbody = document.querySelector('#dashboard-view .table-wrapper table tbody');
+                const historyTbody = document.querySelector('#history-view .table-wrapper table tbody');
+
+                const populateTable = (tbody, items) => {
+                    if (!tbody) return;
                     tbody.innerHTML = '';
-                    mergedDocs.forEach(doc => {
+                    items.forEach(doc => {
                         const date = new Date(doc.uploadedAt || Date.now()).toLocaleDateString('en-GB', {
                             day: 'numeric',
                             month: 'short',
@@ -608,6 +609,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         `;
                         tbody.appendChild(tr);
                     });
+                };
+
+                if (mergedDocs.length > 0) {
+                    populateTable(dashboardTbody, mergedDocs);
+                    populateTable(historyTbody, mergedDocs);
+                } else {
+                    const emptyRow = `<tr><td colspan="5" style="text-align: center; color: var(--muted); padding: 24px;">No activities recorded. Upload a document to start!</td></tr>`;
+                    if (dashboardTbody) dashboardTbody.innerHTML = emptyRow;
+                    if (historyTbody) historyTbody.innerHTML = emptyRow;
                 }
             })
             .catch(err => console.error('Error loading history:', err));
