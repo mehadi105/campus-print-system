@@ -5,21 +5,31 @@
   "main": "backend/server.js",
   "scripts": {
     "start": "node backend/server.js",
+    "start:sqlite": "node backend/sqlite-server.js",
     "dev": "node --watch backend/server.js",
     "prepare": "husky",
-    "commitlint": "commitlint --edit"
+    "commitlint": "commitlint --edit",
+    "test": "node --test --test-concurrency=1 backend/tests/*.test.js",
+    "test:dashboard": "node --test backend/tests/dashboard.test.js",
+    "test:upload": "node --test backend/tests/upload.test.js",
+    "test:documents": "node --test backend/tests/documentManagement.test.js"
   },
   "keywords": [
     "campus",
     "printing",
     "auth",
+    "dashboard",
+    "documents",
     "scrum"
   ],
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.2",
+    "sqlite3": "^5.1.7"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",

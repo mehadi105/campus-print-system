@@ -169,6 +169,32 @@ test(login): add authentication tests
 
 More detail: [docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md)
 
+### Dashboard API
+
+**Endpoint:** `GET /api/dashboard?email=student@university.edu`
+
+Returns student profile, print quota, wallet, and recent activity.
+
+### File Upload API
+
+**Endpoint:** `POST /api/uploads`
+
+Multipart fields: `file`, `email`. Allowed: `.pdf`, `.docx`, `.pptx` (max 25 MB).
+
+```bash
+npm test
+```
+
+### Documents API
+
+**List:** `GET /api/documents?email=student@university.edu`  
+**Get one:** `GET /api/documents/:id`
+
+```bash
+npm run test:documents
+```
+
 ## License
 
 ISC — see [LICENSE](LICENSE).
+

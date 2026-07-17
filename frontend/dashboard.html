@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Print Dashboard</title>
+    <link rel="stylesheet" href="dashboard.style.css">
+</head>
+<body data-page="dashboard">
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand-block">
+                <div class="brand-icon">🖨️</div>
+                <div>
+                    <h1>Campus Print</h1>
+                    <p>Student Workspace</p>
+                </div>
+            </div>
+
+            <nav class="nav-links" aria-label="Sidebar navigation">
+                <a class="nav-item active" href="#dashboard-view">
+                    <span class="nav-icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+                <a class="nav-item" href="#upload-view">
+                    <span class="nav-icon">📝</span>
+                    <span>New Print Request</span>
+                </a>
+                <a class="nav-item" href="#history-view">
+                    <span class="nav-icon">🗂️</span>
+                    <span>Print History</span>
+                </a>
+                <a class="nav-item" href="#billing-view">
+                    <span class="nav-icon">💳</span>
+                    <span>Wallet &amp; Billing</span>
+                </a>
+                <a class="nav-item" href="#settings-view">
+                    <span class="nav-icon">⚙️</span>
+                    <span>Settings</span>
+                </a>
+            </nav>
+
+            <div class="profile-card" id="sidebarProfileCard" role="button" tabindex="0" aria-label="View Profile" style="cursor: pointer;">
+                <div class="avatar">AN</div>
+                <div>
+                    <h3 class="student-name-display">Ava Nguyen</h3>
+                    <p>4th Year • CS Student</p>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-panel">
+            <header class="topbar">
+                <label class="search-box" for="search">
+                    <span class="search-icon">🔎</span>
+                    <input id="search" type="text" placeholder="Search documents, requests, or files">
+                </label>
+
+                <div class="topbar-actions">
+                    <button class="create-btn">＋ Create New Print</button>
+                    <button class="icon-btn" aria-label="Notifications">🔔</button>
+                    <button class="profile-avatar-btn" id="profileAvatarBtn" type="button" aria-label="Edit profile">AN</button>
+                    <button class="logout-btn" id="logoutBtn" type="button">Logout</button>
+                </div>
+            </header>
+
+            <!-- TAB 1: Dashboard View -->
+            <div id="dashboard-view" class="tab-content active">
+                <section class="hero-strip">
+                    <div>
+                        <p class="eyebrow">Smart printing workspace</p>
+                        <h2>Good morning, Ava</h2>
+                        <p>Your print queue is running smoothly and your recent requests are ready to review.</p>
+                    </div>
+                    <div class="hero-badge">⚡ 24/7 Queue Monitor</div>
+                </section>
+
+                <section class="stats-grid" aria-label="Dashboard summary cards">
+                    <article class="stat-card accent-blue">
+                        <div class="stat-icon">💰</div>
+                        <div>
+                            <p class="stat-label">Current Wallet Balance</p>
+                            <h3 id="wallet-balance"></h3>
+                        </div>
+                    </article>
+
+                    <article class="stat-card accent-red">
+                        <div class="stat-icon">⏳</div>
+                        <div>
+                            <p class="stat-label">Live Pending Prints</p>
+                            <h3 class="text-danger">4 Orders</h3>
+                        </div>
+                    </article>
+
+                    <article class="stat-card accent-green">
+                        <div class="stat-icon">✅</div>
+                        <div>
+                            <p class="stat-label">Total Completed Prints</p>
+                            <h3 class="text-success">128 Tasks</h3>
+                        </div>
+                    </article>
+                </section>
+
+                <section class="table-card">
+                    <div class="table-header">
+                        <div>
+                            <p class="eyebrow">Live activity</p>
+                            <h3>Recent Printing Activity</h3>
+                        </div>
+                        <a href="#history-view" class="view-link">View All</a>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Document Name</th>
+                                    <th>Submitted Date</th>
+                                    <th>Total Pages</th>
+                                    <th>Estimated Cost</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Final Report Draft</td>
+                                    <td>15 Jul, 2026</td>
+                                    <td>48</td>
+                                    <td>৳ 120</td>
+                                    <td><span class="status-badge pending">Pending</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Lab Assignment 08</td>
+                                    <td>14 Jul, 2026</td>
+                                    <td>24</td>
+                                    <td>৳ 72</td>
+                                    <td><span class="status-badge processing">Processing</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Research Proposal</td>
+                                    <td>13 Jul, 2026</td>
+                                    <td>96</td>
+                                    <td>৳ 240</td>
+                                    <td><span class="status-badge completed">Completed</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Lecture Notes Pack</td>
+                                    <td>12 Jul, 2026</td>
+                                    <td>32</td>
+                                    <td>৳ 88</td>
+                                    <td><span class="status-badge processing">Processing</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- TAB 2: New Print Request View -->
+            <div id="upload-view" class="tab-content">
+                <section class="upload-section" id="upload-section" aria-label="Document upload">
+                    <header class="upload-section-header">
+                        <div>
+                            <p class="eyebrow">New print request</p>
+                            <h2>Upload Documents</h2>
+                            <p>Drop your files below to queue them for campus printing.</p>
+                        </div>
+                        <div class="upload-header-badge">📄 Secure Upload</div>
+                    </header>
+
+                    <div class="upload-layout">
+                        <div class="upload-main">
+                            <div class="drop-zone" id="dropZone" role="button" tabindex="0" aria-label="Drag and drop files or browse to upload">
+                                <input type="file" id="fileInput" class="drop-zone-input" multiple accept=".pdf,.docx,.pptx" aria-hidden="true">
+
+                                <div class="drop-zone-visual">
+                                    <svg class="upload-illustration" viewBox="0 0 120 120" aria-hidden="true">
+                                        <defs>
+                                            <linearGradient id="uploadGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                <stop offset="0%" stop-color="#2563eb"/>
+                                                <stop offset="100%" stop-color="#4f46e5"/>
+                                            </linearGradient>
+                                        </defs>
+                                        <circle class="upload-ring" cx="60" cy="60" r="48" fill="none" stroke="url(#uploadGrad)" stroke-width="2" stroke-dasharray="8 6" opacity="0.35"/>
+                                        <rect x="34" y="44" width="52" height="40" rx="8" fill="var(--primary-soft)" stroke="url(#uploadGrad)" stroke-width="2"/>
+                                        <path class="upload-arrow" d="M60 52v24M52 60l8-8 8 8" fill="none" stroke="url(#uploadGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <circle class="upload-pulse" cx="60" cy="60" r="54" fill="none" stroke="url(#uploadGrad)" stroke-width="1.5" opacity="0"/>
+                                    </svg>
+                                </div>
+
+                                <h3 class="drop-zone-title">Drag &amp; Drop your files here</h3>
+                                <p class="drop-zone-subtitle">or use the button below to browse from your device</p>
+
+                                <button type="button" class="browse-btn" id="browseBtn">Browse Files</button>
+
+                                <p class="drop-zone-note">Allowed: <strong>.pdf</strong>, <strong>.docx</strong>, <strong>.pptx</strong> — max 25 MB per file</p>
+                            </div>
+
+                            <div class="upload-queue" aria-label="Uploading queue">
+                                <div class="upload-queue-header">
+                                    <div>
+                                        <p class="eyebrow">Active queue</p>
+                                        <h3>Uploading Queue</h3>
+                                    </div>
+                                    <span class="queue-count">3 files</span>
+                                </div>
+
+                                <ul class="queue-list" id="uploadQueue">
+                                    <li class="queue-item" data-status="uploading">
+                                        <div class="queue-item-icon file-icon-pdf" aria-hidden="true">
+                                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2 5 5h-5V4zM8 13h8v2H8v-2zm0 4h5v2H8v-2z"/></svg>
+                                        </div>
+                                        <div class="queue-item-body">
+                                            <div class="queue-item-top">
+                                                <p class="queue-file-name" title="Final_Report_Draft_v3.pdf">Final_Report_Draft_v3.pdf</p>
+                                                <span class="queue-file-size">4.2 MB</span>
+                                            </div>
+                                            <div class="queue-progress" role="progressbar" aria-valuenow="68" aria-valuemin="0" aria-valuemax="100" aria-label="Upload progress">
+                                                <div class="queue-progress-fill" style="width: 68%"></div>
+                                            </div>
+                                        </div>
+                                        <span class="queue-status status-uploading">Uploading…</span>
+                                        <button type="button" class="queue-remove-btn" aria-label="Remove Final_Report_Draft_v3.pdf">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14zM10 11v6M14 11v6"/></svg>
+                                        </button>
+                                    </li>
+
+                                    <li class="queue-item" data-status="uploading">
+                                        <div class="queue-item-icon file-icon-docx" aria-hidden="true">
+                                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2 5 5h-5V4zM9 13h6v2H9v-2zm0 4h4v2H9v-2z"/></svg>
+                                        </div>
+                                        <div class="queue-item-body">
+                                            <div class="queue-item-top">
+                                                <p class="queue-file-name" title="Lab_Assignment_08_Solutions.docx">Lab_Assignment_08_Solutions.docx</p>
+                                                <span class="queue-file-size">1.8 MB</span>
+                                            </div>
+                                            <div class="queue-progress" role="progressbar" aria-valuenow="34" aria-valuemin="0" aria-valuemax="100" aria-label="Upload progress">
+                                                <div class="queue-progress-fill" style="width: 34%"></div>
+                                            </div>
+                                        </div>
+                                        <span class="queue-status status-uploading">Uploading…</span>
+                                        <button type="button" class="queue-remove-btn" aria-label="Remove Lab_Assignment_08_Solutions.docx">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14zM10 11v6M14 11v6"/></svg>
+                                        </button>
+                                    </li>
+
+                                    <li class="queue-item" data-status="ready">
+                                        <div class="queue-item-icon file-icon-pptx" aria-hidden="true">
+                                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2 5 5h-5V4zM8 11h8v2H8v-2zm0 4h6v2H8v-2z"/></svg>
+                                        </div>
+                                        <div class="queue-item-body">
+                                            <div class="queue-item-top">
+                                                <p class="queue-file-name" title="Research_Presentation_Slides.pptx">Research_Presentation_Slides.pptx</p>
+                                                <span class="queue-file-size">12.6 MB</span>
+                                            </div>
+                                            <div class="queue-progress" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" aria-label="Upload complete">
+                                                <div class="queue-progress-fill is-complete" style="width: 100%"></div>
+                                            </div>
+                                        </div>
+                                        <span class="queue-status status-ready">Ready to Print</span>
+                                        <button type="button" class="queue-remove-btn" aria-label="Remove Research_Presentation_Slides.pptx">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14zM10 11v6M14 11v6"/></svg>
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <!-- Document Library (SCRUM-35) -->
+                            <div class="library-card">
+                                <div class="library-header">
+                                    <div>
+                                        <p class="eyebrow">Saved documents</p>
+                                        <h3>My Saved Documents</h3>
+                                    </div>
+                                    <span class="library-count" id="libraryCountText">0 files</span>
+                                </div>
+                                
+                                <div class="library-grid" id="libraryGrid">
+                                    <!-- Dynamic cards injected via JavaScript -->
+                                    <div class="library-empty-state" id="libraryEmptyState">
+                                        <div class="empty-state-icon">📂</div>
+                                        <p class="empty-state-title">No documents saved yet</p>
+                                        <p class="empty-state-subtitle">Files uploaded through the drop zone will appear here.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <aside class="upload-sidebar" aria-label="Printing guidelines and cost summary">
+                            <div class="guidelines-card">
+                                <div class="guidelines-header">
+                                    <p class="eyebrow">Before you print</p>
+                                    <h3>Printing Guidelines &amp; Cost Summary</h3>
+                                </div>
+
+                                <div class="guidelines-block">
+                                    <h4>Supported Formats</h4>
+                                    <ul class="format-list">
+                                        <li>
+                                            <span class="format-badge format-pdf">PDF</span>
+                                            <span>Best for reports &amp; assignments</span>
+                                        </li>
+                                        <li>
+                                            <span class="format-badge format-docx">DOCX</span>
+                                            <span>Word documents &amp; essays</span>
+                                        </li>
+                                        <li>
+                                            <span class="format-badge format-pptx">PPTX</span>
+                                            <span>Presentations &amp; slides</span>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <div class="guidelines-block">
+                                    <h4>File Limits</h4>
+                                    <div class="limit-row">
+                                        <span class="limit-icon">📦</span>
+                                        <div>
+                                            <p class="limit-label">Maximum file size</p>
+                                            <p class="limit-value">25 MB per document</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="cost-summary">
+                                    <h4>Print Balance</h4>
+                                    <div class="balance-display">
+                                        <span class="balance-amount" id="upload-wallet-balance">৳ 450</span>
+                                        <span class="balance-label">Available wallet balance</span>
+                                    </div>
+                                    <div class="cost-estimate">
+                                        <div class="cost-row">
+                                            <span>Queued files</span>
+                                            <strong>3</strong>
+                                        </div>
+                                        <div class="cost-row">
+                                            <span>Est. total cost</span>
+                                            <strong class="cost-highlight">৳ 186</strong>
+                                        </div>
+                                    </div>
+                                    <div class="quota-mini">
+                                        <div class="quota-mini-top">
+                                            <span>Monthly quota used</span>
+                                            <span>50%</span>
+                                        </div>
+                                        <div class="quota-bar quota-bar-sm">
+                                            <div class="quota-fill" style="width: 50%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button type="button" class="submit-print-btn">Submit Print Request</button>
+                            </div>
+                        </aside>
+                    </div>
+                </section>
+            </div>
+
+            <!-- TAB 3: Print History View -->
+            <div id="history-view" class="tab-content">
+                <section class="table-card">
+                    <div class="table-header">
+                        <div>
+                            <p class="eyebrow">Full print logs</p>
+                            <h3>Print History</h3>
+                        </div>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Document Name</th>
+                                    <th>Submitted Date</th>
+                                    <th>Total Pages</th>
+                                    <th>Estimated Cost</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Final Report Draft</td>
+                                    <td>15 Jul, 2026</td>
+                                    <td>48</td>
+                                    <td>৳ 120</td>
+                                    <td><span class="status-badge completed">Completed</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Lab Assignment 08</td>
+                                    <td>14 Jul, 2026</td>
+                                    <td>24</td>
+                                    <td>৳ 72</td>
+                                    <td><span class="status-badge completed">Completed</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Research Proposal</td>
+                                    <td>13 Jul, 2026</td>
+                                    <td>96</td>
+                                    <td>৳ 240</td>
+                                    <td><span class="status-badge completed">Completed</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Lecture Notes Pack</td>
+                                    <td>12 Jul, 2026</td>
+                                    <td>32</td>
+                                    <td>৳ 88</td>
+                                    <td><span class="status-badge completed">Completed</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Homework 3 Solutions</td>
+                                    <td>10 Jul, 2026</td>
+                                    <td>12</td>
+                                    <td>৳ 36</td>
+                                    <td><span class="status-badge completed">Completed</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Physics Lab Report</td>
+                                    <td>08 Jul, 2026</td>
+                                    <td>18</td>
+                                    <td>৳ 54</td>
+                                    <td><span class="status-badge completed">Completed</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- TAB 4: Wallet & Billing View -->
+            <div id="billing-view" class="tab-content">
+                <div class="billing-grid">
+                    <div class="billing-main">
+                        <section class="stats-grid" style="grid-template-columns: 1fr; margin-bottom: 20px;">
+                            <article class="stat-card accent-blue" style="padding: 24px;">
+                                <div class="stat-icon" style="width: 60px; height: 60px; font-size: 1.8rem;">💰</div>
+                                <div>
+                                    <p class="stat-label" style="font-size: 0.95rem; margin-bottom: 6px;">Available Balance</p>
+                                    <h2 id="wallet-balance-billing" style="font-size: 2.2rem; font-weight: 800; color: var(--text); margin: 0;">৳ 1,250</h2>
+                                </div>
+                            </article>
+                        </section>
+
+                        <section class="table-card">
+                            <div class="table-header">
+                                <div>
+                                    <p class="eyebrow">Financial statements</p>
+                                    <h3>Transaction History</h3>
+                                </div>
+                            </div>
+                            <div class="table-wrapper">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Transaction ID</th>
+                                            <th>Date</th>
+                                            <th>Type</th>
+                                            <th>Amount</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>TXN-90812</td>
+                                            <td>15 Jul, 2026</td>
+                                            <td>Print Printout Debit</td>
+                                            <td style="color: var(--danger); font-weight: 600;">- ৳ 120</td>
+                                            <td><span class="status-badge completed">Success</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>TXN-89712</td>
+                                            <td>14 Jul, 2026</td>
+                                            <td>Print Printout Debit</td>
+                                            <td style="color: var(--danger); font-weight: 600;">- ৳ 72</td>
+                                            <td><span class="status-badge completed">Success</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>TXN-88001</td>
+                                            <td>10 Jul, 2026</td>
+                                            <td>Wallet Top-up Credit</td>
+                                            <td style="color: var(--success); font-weight: 600;">+ ৳ 500</td>
+                                            <td><span class="status-badge completed">Success</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>TXN-87612</td>
+                                            <td>08 Jul, 2026</td>
+                                            <td>Print Printout Debit</td>
+                                            <td style="color: var(--danger); font-weight: 600;">- ৳ 54</td>
+                                            <td><span class="status-badge completed">Success</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div class="billing-sidebar">
+                        <section class="quota-card" style="display: grid; gap: 16px; width: 100%; border: 1px solid var(--border); box-shadow: var(--shadow); background: var(--surface);">
+                            <div class="quota-info">
+                                <p class="eyebrow">Monthly Quota Status</p>
+                                <h4 id="quota-text-billing" style="font-weight: 800; font-size: 1.15rem; margin-top: 4px; margin-bottom: 6px;">Free Pages Left: 50 / 100</h4>
+                                <p style="font-size: 0.88rem; margin: 0; color: var(--muted);">Your monthly free student page allowance resets in 14 days.</p>
+                            </div>
+                            <div class="quota-bar" style="width: 100%;">
+                                <div class="quota-fill" id="quota-progress-billing" style="width: 50%;"></div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 5: Settings View -->
+            <div id="settings-view" class="tab-content">
+                <section class="table-card">
+                    <div class="table-header">
+                        <div>
+                            <p class="eyebrow">Preferences</p>
+                            <h3>Workspace Settings</h3>
+                        </div>
+                    </div>
+                    <form style="display: grid; gap: 20px; max-width: 520px; padding: 12px 6px;">
+                        <div style="display: grid; gap: 8px;">
+                            <label style="font-weight: 600; font-size: 0.95rem; color: var(--text);">Default Print Preferences</label>
+                            <select style="padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); outline: none; font-weight: 600;">
+                                <option>Double-Sided (Duplex) • Black & White</option>
+                                <option>Single-Sided (Simplex) • Black & White</option>
+                                <option>Double-Sided (Duplex) • Color Accent</option>
+                                <option>Single-Sided (Simplex) • Color Accent</option>
+                            </select>
+                        </div>
+                        <div style="display: grid; gap: 8px;">
+                            <label style="font-weight: 600; font-size: 0.95rem; color: var(--text);">Default Printer Terminal</label>
+                            <select style="padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); outline: none; font-weight: 600;">
+                                <option>Central Library - Terminal 1</option>
+                                <option>Central Library - Terminal 2</option>
+                                <option>Science Annex Hallway - Terminal A</option>
+                                <option>CSE Department Main Lab - Terminal B</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; gap: 12px; align-items: center; padding: 6px 0;">
+                            <input type="checkbox" id="checkNotify" checked style="width: 18px; height: 18px; accent-color: var(--primary);">
+                            <label for="checkNotify" style="font-weight: 600; font-size: 0.92rem; color: var(--text);">Send email notifications upon successful print jobs</label>
+                        </div>
+                        <button type="submit" class="create-btn" style="justify-self: start; padding: 12px 28px;">Save Preferences</button>
+                    </form>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Premium Two-Column Profile Modal -->
+    <div class="modal-backdrop" id="profileModal">
+        <div class="modal-card">
+            <header class="modal-header">
+                <div>
+                    <p class="eyebrow">Account Settings</p>
+                    <h3>My Profile &amp; Info</h3>
+                </div>
+                <button type="button" class="modal-close" id="closeModalBtn" aria-label="Close modal">✕</button>
+            </header>
+
+            <div class="profile-modal-layout">
+                <!-- Left: View Info -->
+                <div class="profile-modal-info">
+                    <div class="profile-modal-avatar-section">
+                        <div class="avatar">AN</div>
+                        <div>
+                            <h3 class="student-name-display">Ava Nguyen</h3>
+                            <p class="profile-meta">Department of <span id="student-dept">CS</span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="profile-modal-grid">
+                        <div class="profile-info-item">
+                            <span class="info-label">Roll ID</span>
+                            <span class="info-value" id="student-id">12345</span>
+                        </div>
+                        <div class="profile-info-item">
+                            <span class="info-label">Email Address</span>
+                            <span class="info-value" id="student-email">ava@example.com</span>
+                        </div>
+                        <div class="profile-info-item">
+                            <span class="info-label">Current Semester</span>
+                            <span class="info-value" id="student-semester">8th</span>
+                        </div>
+                        <div class="profile-info-item">
+                            <span class="info-label">Academic Session</span>
+                            <span class="info-value" id="student-session">2022-23</span>
+                        </div>
+                        <div class="profile-info-item">
+                            <span class="info-label">Account Status</span>
+                            <span class="status-pill" id="student-status">Active</span>
+                        </div>
+                    </div>
+
+                    <div class="profile-quota-box">
+                        <div class="quota-info-mini">
+                            <span class="info-label">Monthly Print Quota</span>
+                            <span id="quota-text" class="quota-text-mini">Free Pages Left: 50 / 100</span>
+                        </div>
+                        <div class="quota-bar quota-bar-modal" aria-label="Print quota progress">
+                            <div class="quota-fill" id="quota-progress" style="width: 50%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Edit Form -->
+                <form id="editProfileForm" class="edit-profile-form">
+                    <h4>Edit Profile Fields</h4>
+                    <div class="form-group">
+                        <label for="editName">Full Name</label>
+                        <input type="text" id="editName" required placeholder="Enter full name">
+                    </div>
+                    <div class="form-group">
+                        <label for="editEmail">Email Address</label>
+                        <input type="email" id="editEmail" required placeholder="Enter email address">
+                    </div>
+                    <div class="form-group">
+                        <label for="editDepartment">Department</label>
+                        <input type="text" id="editDepartment" required placeholder="Enter department">
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="secondary-btn" id="cancelEditBtn">Cancel</button>
+                        <button type="submit" class="save-profile-btn">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="upload.js"></script>
+    <script src="profile.js"></script>
+</body>
+</html>
