@@ -110,3 +110,50 @@ const response = await fetch('http://localhost:3000/api/auth/register', {
 });
 const data = await response.json();
 ```
+
+### View Documents API (SCRUM-36)
+
+**List documents:** `GET /api/documents`
+
+Optional filter by student email (matches dashboard / document list UI):
+
+`GET /api/documents?email=student@university.edu`
+
+**Success response (200):**
+```json
+{
+  "success": true,
+  "message": "Documents retrieved successfully",
+  "count": 1,
+  "documents": [
+    {
+      "id": "doc-1710000000000",
+      "fileName": "assignment.pdf",
+      "originalName": "assignment.pdf",
+      "mimeType": "application/pdf",
+      "size": 245760,
+      "uploadedBy": "student@university.edu",
+      "uploadedAt": "2026-07-17T08:00:00.000Z",
+      "status": "ready"
+    }
+  ]
+}
+```
+
+**Get one document:** `GET /api/documents/:id`
+
+**Error responses:**
+- `404` - Document not found
+
+### Frontend Integration (Document List)
+
+Ready for Imtiaj's document list UI (`SCRUM-35` / `SCRUM-37`):
+
+```javascript
+const email = currentStudent.email;
+const response = await fetch(
+  `http://localhost:3000/api/documents?email=${encodeURIComponent(email)}`
+);
+const data = await response.json();
+// data.documents → render list / cards
+```
