@@ -9,10 +9,11 @@
 <body>
     <div class="login-container">
         <h2>Campus Printing System</h2>
-        <form>
+        <div id="message" style="display:none; margin-bottom: 15px; padding: 10px; border-radius: 5px; text-align: center; font-weight: bold;"></div>
+        <form id="loginForm">
             <div class="input-group">
-                <label for="email">Student Email</label>
-                <input type="email" id="email" placeholder="Enter your varsity email" required>
+                <label for="email">Email or Roll ID</label>
+                <input type="text" id="email" placeholder="Enter your email or roll ID" required>
             </div>
             <div class="input-group">
                 <label for="password">Password</label>
@@ -22,7 +23,9 @@
         </form>
         <a href="#" class="forgot-password">Forgot Password?</a>
         <div class="divider"></div>
-        <a href="#" class="create-account-btn">Create New Account</a>
+        <a href="register.html" class="create-account-btn">Create New Account</a>
     </div>
+
+    <script src="script.js"></script>
 </body>
 </html>
