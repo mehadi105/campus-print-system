@@ -847,6 +847,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 unitCost = isDuplex ? 1.5 : 2.0;
             }
 
+            // Paper size pricing adjustment (SCRUM-47)
+            if (printPaperSize && printPaperSize.value === 'Legal') {
+                unitCost += 1.0;
+            }
+
             const estTotalCost = totalPagesToPrint * unitCost;
 
             // Update DOM fields
@@ -863,13 +868,24 @@ document.addEventListener('DOMContentLoaded', () => {
             const previewCopiesBadge = document.getElementById('previewCopiesBadge');
 
             if (previewPaper) {
+                // Determine base size of paper according to paper size (SCRUM-47)
+                let baseWidth = 80;
+                let baseHeight = 110;
+                if (printPaperSize && printPaperSize.value === 'Letter') {
+                    baseWidth = 84;
+                    baseHeight = 106;
+                } else if (printPaperSize && printPaperSize.value === 'Legal') {
+                    baseWidth = 76;
+                    baseHeight = 120;
+                }
+
                 // Orientation rotation
                 if (printOrientation && printOrientation.value === 'Landscape') {
-                    previewPaper.style.width = '110px';
-                    previewPaper.style.height = '80px';
+                    previewPaper.style.width = `${baseHeight}px`;
+                    previewPaper.style.height = `${baseWidth}px`;
                 } else {
-                    previewPaper.style.width = '80px';
-                    previewPaper.style.height = '110px';
+                    previewPaper.style.width = `${baseWidth}px`;
+                    previewPaper.style.height = `${baseHeight}px`;
                 }
 
                 // Duplex backing sheet toggle
@@ -995,6 +1011,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const totalPagesToPrint = printPages * copies;
             let unitCost = isColor ? (isDuplex ? 4.0 : 5.0) : (isDuplex ? 1.5 : 2.0);
+            if (printPaperSize && printPaperSize.value === 'Legal') {
+                unitCost += 1.0;
+            }
             const estTotalCost = totalPagesToPrint * unitCost;
 
             const orderData = {
