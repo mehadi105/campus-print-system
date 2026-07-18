@@ -337,6 +337,55 @@ app.get('/api/print-orders', authenticateToken, (req, res) => {
     );
 });
 
+// Simulated payment + status update (SCRUM-65)
+app.post('/api/payments', authenticateToken, (req, res) => {
+    const { amount, method = 'Wallet', orderId = null } = req.body;
+    if (amount == null || Number(amount) <= 0) {
+        return res.status(400).json({ error: 'A positive payment amount is required.' });
+    }
+
+    const referenceId = `TXN-${Date.now()}`;
+    const sql = `
+        INSERT INTO payments (studentEmail, orderId, amount, method, status, referenceId)
+        VALUES (?, ?, ?, ?, 'Success', ?)
+    `;
+
+    db.run(sql, [req.user.email, orderId, Number(amount), method, referenceId], function (err) {
+        if (err) {
+            return res.status(500).json({ error: 'Database error saving payment: ' + err.message });
+        }
+        db.get('SELECT * FROM payments WHERE id = ?', [this.lastID], (getErr, row) => {
+            if (getErr) {
+                return res.status(500).json({ error: getErr.message });
+            }
+            res.status(201).json({
+                message: 'Payment recorded successfully.',
+                payment: row,
+            });
+        });
+    });
+});
+
+app.patch('/api/payments/:id/status', authenticateToken, (req, res) => {
+    const { status } = req.body;
+    const allowed = ['Success', 'Pending', 'Failed', 'Refunded'];
+    if (!allowed.includes(status)) {
+        return res.status(400).json({ error: 'Invalid payment status.' });
+    }
+    db.run(
+        'UPDATE payments SET status = ? WHERE id = ?',
+        [status, req.params.id],
+        function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            if (this.changes === 0) return res.status(404).json({ error: 'Payment not found.' });
+            db.get('SELECT * FROM payments WHERE id = ?', [req.params.id], (getErr, row) => {
+                if (getErr) return res.status(500).json({ error: getErr.message });
+                res.json({ message: 'Payment status updated.', payment: row });
+            });
+        }
+    );
+});
+
 
 // ── Serving static files ──
 app.get('*', (req, res) => {
