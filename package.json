@@ -4,7 +4,8 @@
   "description": "Campus Printing System Student Dashboard and Backend",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node test_print_orders.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
