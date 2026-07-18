@@ -816,32 +816,34 @@ document.addEventListener('DOMContentLoaded', () => {
                     return new Date(b.createdAt) - new Date(a.createdAt);
                 });
 
-                const dashboardTbody = document.querySelector('#dashboard-view .table-wrapper table tbody');
-                const historyTbody = document.querySelector('#history-view .table-wrapper table tbody');
+                cachedPrintOrders = mergedOrders; // Cache for history filters
 
+                const dashboardTbody = document.querySelector('#dashboard-view .table-wrapper table tbody');
                 if (mergedOrders.length > 0) {
                     populateTable(dashboardTbody, mergedOrders);
-                    populateTable(historyTbody, mergedOrders);
                 } else {
                     const emptyRow = `<tr><td colspan="5" style="text-align: center; color: var(--muted); padding: 24px;">No print orders placed yet. Upload files and click Print Now to start!</td></tr>`;
                     if (dashboardTbody) dashboardTbody.innerHTML = emptyRow;
-                    if (historyTbody) historyTbody.innerHTML = emptyRow;
                 }
+                
+                // Populate history view and update statistics
+                renderFilteredHistory();
             })
             .catch(err => {
                 console.warn('API error loading print orders queue, using local fallback...', err);
                 const localOrders = JSON.parse(localStorage.getItem('printOrders') || '[]');
-                const dashboardTbody = document.querySelector('#dashboard-view .table-wrapper table tbody');
-                const historyTbody = document.querySelector('#history-view .table-wrapper table tbody');
+                cachedPrintOrders = localOrders; // Cache fallback
 
+                const dashboardTbody = document.querySelector('#dashboard-view .table-wrapper table tbody');
                 if (localOrders.length > 0) {
                     populateTable(dashboardTbody, localOrders);
-                    populateTable(historyTbody, localOrders);
                 } else {
                     const emptyRow = `<tr><td colspan="5" style="text-align: center; color: var(--muted); padding: 24px;">No print orders placed yet. Upload files and click Print Now to start!</td></tr>`;
                     if (dashboardTbody) dashboardTbody.innerHTML = emptyRow;
-                    if (historyTbody) historyTbody.innerHTML = emptyRow;
                 }
+                
+                // Populate history view and update statistics
+                renderFilteredHistory();
             });
         };
 
@@ -1567,6 +1569,100 @@ document.addEventListener('DOMContentLoaded', () => {
             const printSettings = { defaultPref, defaultTerminal, notify };
             localStorage.setItem('printSettings', JSON.stringify(printSettings));
             alert('Default printing preferences saved successfully!');
+        });
+
+        // ── Order History Search & Filters (SCRUM-54) ──
+        let cachedPrintOrders = [];
+
+        const renderFilteredHistory = () => {
+            const historyTbody = document.querySelector('#history-view .table-wrapper table tbody');
+            if (!historyTbody) return;
+
+            const searchQuery = (document.getElementById('historySearch')?.value || '').trim().toLowerCase();
+            const filterStatus = document.getElementById('historyFilterStatus')?.value || 'All';
+            const filterPayment = document.getElementById('historyFilterPayment')?.value || 'All';
+
+            const filtered = cachedPrintOrders.filter(order => {
+                const nameMatch = order.documentName.toLowerCase().includes(searchQuery) ||
+                                  (order.referenceId && order.referenceId.toLowerCase().includes(searchQuery));
+                
+                let statusMatch = true;
+                if (filterStatus !== 'All') {
+                    statusMatch = (order.status || '').toLowerCase() === filterStatus.toLowerCase();
+                }
+
+                let paymentMatch = true;
+                if (filterPayment !== 'All') {
+                    paymentMatch = (order.paymentMethod || '').toLowerCase() === filterPayment.toLowerCase();
+                }
+
+                return nameMatch && statusMatch && paymentMatch;
+            });
+
+            // Calculate history summary metrics
+            let totalOrders = filtered.length;
+            let totalPages = 0;
+            let totalCost = 0;
+
+            filtered.forEach(order => {
+                totalPages += (order.pages * order.copies) || 0;
+                if (order.paymentMethod !== 'Quota') {
+                    totalCost += order.estimatedCost || 0;
+                }
+            });
+
+            const historyStatTotalOrders = document.getElementById('historyStatTotalOrders');
+            const historyStatTotalPages = document.getElementById('historyStatTotalPages');
+            const historyStatTotalCost = document.getElementById('historyStatTotalCost');
+
+            if (historyStatTotalOrders) historyStatTotalOrders.textContent = totalOrders;
+            if (historyStatTotalPages) historyStatTotalPages.textContent = `${totalPages} pgs`;
+            if (historyStatTotalCost) historyStatTotalCost.textContent = `৳ ${totalCost.toFixed(2)}`;
+
+            if (filtered.length > 0) {
+                populateTable(historyTbody, filtered);
+            } else {
+                historyTbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--muted); padding: 24px;">No matching print history found. Adjust search or filters!</td></tr>`;
+            }
+        };
+
+        // Setup filter input bindings
+        document.getElementById('historySearch')?.addEventListener('input', renderFilteredHistory);
+        document.getElementById('historyFilterStatus')?.addEventListener('change', renderFilteredHistory);
+        document.getElementById('historyFilterPayment')?.addEventListener('change', renderFilteredHistory);
+
+        // CSV Exporter Action
+        document.getElementById('exportHistoryBtn')?.addEventListener('click', () => {
+            if (cachedPrintOrders.length === 0) {
+                alert('No print logs available to export.');
+                return;
+            }
+            
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Reference ID,Document Name,Date,Pages,Cost,Status,Payment Method,Terminal\r\n";
+            
+            cachedPrintOrders.forEach(order => {
+                const date = new Date(order.createdAt || Date.now()).toLocaleDateString('en-GB');
+                const row = [
+                    order.referenceId || '',
+                    `"${order.documentName.replace(/"/g, '""')}"`,
+                    date,
+                    order.pages * order.copies,
+                    order.paymentMethod === 'Quota' ? 'Quota' : `Tk ${order.estimatedCost}`,
+                    order.status || 'Pending',
+                    order.paymentMethod,
+                    order.printerTerminal
+                ].join(",");
+                csvContent += row + "\r\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "campus_print_history.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         });
 
         // Initialize table & library rendering, and load settings

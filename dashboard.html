@@ -356,13 +356,58 @@
                 </section>
             </div>
 
-            <!-- TAB 3: Print History View -->
+            <!-- TAB 3: Print History View (SCRUM-54) -->
             <div id="history-view" class="tab-content">
+                <!-- History stats metrics row -->
+                <div class="history-metrics-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 20px;">
+                    <div class="history-metric-card" style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 12px;">
+                        <span style="font-size: 1.5rem;">📋</span>
+                        <div>
+                            <span style="font-size: 0.72rem; color: var(--muted); font-weight: 700; text-transform: uppercase;">Total Orders</span>
+                            <h4 id="historyStatTotalOrders" style="margin: 2px 0 0 0; font-size: 1.15rem; font-weight: 800; color: var(--text);">0</h4>
+                        </div>
+                    </div>
+                    <div class="history-metric-card" style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 12px;">
+                        <span style="font-size: 1.5rem;">📄</span>
+                        <div>
+                            <span style="font-size: 0.72rem; color: var(--muted); font-weight: 700; text-transform: uppercase;">Total Pages</span>
+                            <h4 id="historyStatTotalPages" style="margin: 2px 0 0 0; font-size: 1.15rem; font-weight: 800; color: var(--text);">0 pgs</h4>
+                        </div>
+                    </div>
+                    <div class="history-metric-card" style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 12px;">
+                        <span style="font-size: 1.5rem;">৳</span>
+                        <div>
+                            <span style="font-size: 0.72rem; color: var(--muted); font-weight: 700; text-transform: uppercase;">Cash Expensed</span>
+                            <h4 id="historyStatTotalCost" style="margin: 2px 0 0 0; font-size: 1.15rem; font-weight: 800; color: var(--text);">৳ 0.00</h4>
+                        </div>
+                    </div>
+                </div>
+
                 <section class="table-card">
-                    <div class="table-header">
+                    <div class="table-header" style="flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between;">
                         <div>
                             <p class="eyebrow">Full print logs</p>
                             <h3>Print History</h3>
+                        </div>
+                        
+                        <!-- History Filters and Actions Toolbar -->
+                        <div class="history-toolbar" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+                            <input type="text" id="historySearch" placeholder="Search files..." style="padding: 8px 14px; font-size: 0.8rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); outline: none; width: 160px; font-weight: 600;">
+                            
+                            <select id="historyFilterStatus" style="padding: 8px 10px; font-size: 0.8rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); outline: none; font-weight: 600;">
+                                <option value="All">All Statuses</option>
+                                <option value="Completed">Completed</option>
+                                <option value="Processing">Processing</option>
+                                <option value="Cancelled">Cancelled</option>
+                            </select>
+                            
+                            <select id="historyFilterPayment" style="padding: 8px 10px; font-size: 0.8rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); outline: none; font-weight: 600;">
+                                <option value="All">All Payments</option>
+                                <option value="Quota">Quota</option>
+                                <option value="Wallet">Wallet</option>
+                            </select>
+
+                            <button type="button" id="exportHistoryBtn" class="secondary-btn" style="padding: 8px 14px; font-size: 0.8rem; font-weight: 700; height: 34px; line-height: 1; border-radius: 10px;">📥 Export CSV</button>
                         </div>
                     </div>
 

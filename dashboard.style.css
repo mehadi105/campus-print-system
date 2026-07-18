@@ -2570,3 +2570,31 @@ input[type="number"] {
     background: var(--danger-soft) !important;
     color: var(--danger) !important;
 }
+
+/* ── History Metrics & Toolbar Styling (SCRUM-54) ── */
+.history-metric-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.history-metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.05);
+}
+.history-toolbar select:hover {
+    border-color: var(--primary);
+}
+.history-toolbar input:focus {
+    border-color: var(--primary);
+    background: var(--surface);
+}
+
+@media (prefers-color-scheme: dark) {
+    .history-metric-card {
+        background: #1e293b !important;
+        border-color: #2d3a4f !important;
+    }
+    .history-toolbar select, 
+    .history-toolbar input {
+        background: #1e293b !important;
+        border-color: #2d3a4f !important;
+    }
+}
