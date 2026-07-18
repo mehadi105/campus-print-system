@@ -50,6 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (targetTabId === 'queue-view') refreshAdminQueue();
             if (targetTabId === 'printers-view') refreshAdminPrinters();
             if (targetTabId === 'students-view') refreshAdminStudents();
+            if (targetTabId === 'payments-view') refreshAdminPayments();
         });
     });
 
@@ -1039,6 +1040,161 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
 
+    // ── Payment Ledger cockpit (SCRUM-64) ──
+    let adminCachedPayments = [];
+
+    const refreshAdminPayments = () => {
+        fetch('/api/admin/payments', {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+        .then(res => res.ok ? res.json() : [])
+        .then(payments => {
+            adminCachedPayments = payments;
+            renderAdminPaymentsTable();
+            calculatePaymentStats();
+        })
+        .catch(err => {
+            console.warn('API payments ledger failed, loading offline fallback...', err);
+            
+            // Offline fallback transactions join with student name
+            const localTxns = JSON.parse(localStorage.getItem('transactions') || '[]');
+            const student = JSON.parse(localStorage.getItem('currentStudent') || 'null');
+            
+            // Map offline logs
+            adminCachedPayments = localTxns.map(t => {
+                return {
+                    ...t,
+                    fullName: student ? student.fullName : 'Ava Nguyen',
+                    rollId: student ? student.rollId : '4010',
+                    department: student ? student.department : 'Computer Science'
+                };
+            });
+
+            renderAdminPaymentsTable();
+            calculatePaymentStats();
+        });
+    };
+
+    const renderAdminPaymentsTable = () => {
+        const tbody = document.querySelector('#paymentsLedgerTable tbody');
+        if (!tbody) return;
+
+        const searchQuery = (document.getElementById('paymentSearch')?.value || '').trim().toLowerCase();
+        const typeFilter = document.getElementById('paymentFilterType')?.value || 'All';
+
+        const filtered = adminCachedPayments.filter(p => {
+            const queryMatch = p.referenceId.toLowerCase().includes(searchQuery) ||
+                               (p.fullName && p.fullName.toLowerCase().includes(searchQuery)) ||
+                               (p.rollId && p.rollId.toLowerCase().includes(searchQuery));
+
+            const typeMatch = typeFilter === 'All' || p.type === typeFilter;
+
+            return queryMatch && typeMatch;
+        });
+
+        tbody.innerHTML = '';
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--muted); padding: 24px;">No transaction records found.</td></tr>`;
+            return;
+        }
+
+        filtered.forEach(p => {
+            const date = new Date(p.createdAt || Date.now()).toLocaleDateString('en-GB', {
+                day: 'numeric',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            const isCredit = p.type.includes('Refund') || p.type.includes('Top-up');
+            const sign = isCredit ? '+' : '-';
+            const color = isCredit ? '#10b981' : 'var(--text)';
+            const amtDisplay = p.amount > 0 ? `${sign}৳ ${p.amount.toFixed(2)}` : '0.00';
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${p.referenceId}</strong></td>
+                <td>
+                    <div>${p.fullName}</div>
+                    <small style="color: var(--muted); font-size: 0.72rem;">Roll-${p.rollId}</small>
+                </td>
+                <td><span style="font-weight: 600;">${p.type}</span></td>
+                <td><span style="color: var(--muted);">${date}</span></td>
+                <td><strong style="color: ${color};">${amtDisplay}</strong></td>
+                <td><span class="status-badge completed">${p.status || 'Success'}</span></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    };
+
+    const calculatePaymentStats = () => {
+        let totalCollected = 0;
+        let totalRefunds = 0;
+        let totalDebits = 0;
+
+        adminCachedPayments.forEach(p => {
+            const amt = p.amount || 0;
+            if (p.type === 'Admin Cash Top-up' || p.type === 'Cash Top-up') {
+                totalCollected += amt;
+            } else if (p.type.includes('Refund')) {
+                totalRefunds += amt;
+            } else if (p.type === 'Print Debit' || p.type.includes('Print Order')) {
+                totalDebits += amt;
+            }
+        });
+
+        const netRevenue = totalDebits - totalRefunds;
+
+        const paymentStatCollected = document.getElementById('paymentStatCollected');
+        const paymentStatRefunds = document.getElementById('paymentStatRefunds');
+        const paymentStatNet = document.getElementById('paymentStatNet');
+
+        if (paymentStatCollected) paymentStatCollected.textContent = `৳ ${totalCollected.toFixed(2)}`;
+        if (paymentStatRefunds) paymentStatRefunds.textContent = `৳ ${totalRefunds.toFixed(2)}`;
+        if (paymentStatNet) paymentStatNet.textContent = `৳ ${netRevenue.toFixed(2)}`;
+    };
+
+    // CSV Exporter
+    document.getElementById('exportPaymentsCsvBtn')?.addEventListener('click', () => {
+        if (adminCachedPayments.length === 0) {
+            alert('No transaction records available to export.');
+            return;
+        }
+
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Reference ID,Student Name,Roll ID,Department,Transaction Type,Date,Amount,Status\n";
+
+        adminCachedPayments.forEach(p => {
+            const dateStr = new Date(p.createdAt).toISOString();
+            const row = [
+                p.referenceId,
+                `"${p.fullName}"`,
+                p.rollId,
+                `"${p.department}"`,
+                `"${p.type}"`,
+                dateStr,
+                p.amount.toFixed(2),
+                p.status || 'Success'
+            ].join(",");
+            csvContent += row + "\n";
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `payment_ledger_${Date.now()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+
+    // Bind filters
+    document.getElementById('paymentSearch')?.addEventListener('input', renderAdminPaymentsTable);
+    document.getElementById('paymentFilterType')?.addEventListener('change', renderAdminPaymentsTable);
+
+
     // ── Auto-polling for Real-time Data updates (every 5 seconds) ──
     setInterval(() => {
         refreshAdminStats();
@@ -1049,6 +1205,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (targetTabId === 'queue-view') refreshAdminQueue();
             if (targetTabId === 'printers-view') refreshAdminPrinters();
             if (targetTabId === 'students-view') refreshAdminStudents();
+            if (targetTabId === 'payments-view') refreshAdminPayments();
         }
 
         // If details drawer is open for a student, refresh their details in background

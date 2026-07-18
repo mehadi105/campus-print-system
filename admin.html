@@ -32,6 +32,10 @@
                     <span class="nav-icon">👥</span>
                     <span>Student Accounts</span>
                 </a>
+                <a class="nav-item" href="#payments-view">
+                    <span class="nav-icon">💳</span>
+                    <span>Payment Ledger</span>
+                </a>
                 <a class="nav-item" href="#settings-view">
                     <span class="nav-icon">🔧</span>
                     <span>System Settings</span>
@@ -174,6 +178,76 @@
                             </thead>
                             <tbody>
                                 <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- VIEW 3.5: Payment Ledger / Transaction History (SCRUM-64) -->
+            <div id="payments-view" class="tab-content">
+                <!-- Payment Overview Analytics Cards -->
+                <section class="stats-grid" style="margin-bottom: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
+                    <article class="stat-card accent-green">
+                        <div class="stat-icon">💰</div>
+                        <div>
+                            <p class="stat-label">Total Cash Collected</p>
+                            <h2 id="paymentStatCollected">৳ 0.00</h2>
+                        </div>
+                    </article>
+                    <article class="stat-card accent-orange">
+                        <div class="stat-icon">🔄</div>
+                        <div>
+                            <p class="stat-label">Total Refund Payouts</p>
+                            <h2 id="paymentStatRefunds">৳ 0.00</h2>
+                        </div>
+                    </article>
+                    <article class="stat-card accent-blue">
+                        <div class="stat-icon">📊</div>
+                        <div>
+                            <p class="stat-label">Net Print Revenue</p>
+                            <h2 id="paymentStatNet">৳ 0.00</h2>
+                        </div>
+                    </article>
+                </section>
+
+                <section class="table-card">
+                    <div class="table-header" style="flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between;">
+                        <div>
+                            <p class="eyebrow">Financial audits ledger</p>
+                            <h3>Payment Ledger Log</h3>
+                        </div>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <input type="text" id="paymentSearch" placeholder="Search reference/roll..." style="padding: 8px 14px; font-size: 0.8rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); outline: none; width: 180px; font-weight: 600;">
+                            
+                            <select id="paymentFilterType" style="padding: 8px 10px; font-size: 0.8rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); outline: none; font-weight: 600;">
+                                <option value="All">All Types</option>
+                                <option value="Cash Top-up">Cash Recharges</option>
+                                <option value="Print Debit">Print Debits</option>
+                                <option value="Print Refund">Refunds Paid</option>
+                                <option value="Quota Adjustment">Quota Adjustments</option>
+                            </select>
+
+                            <button type="button" class="printer-btn" id="exportPaymentsCsvBtn" style="padding: 8px 14px; display: flex; align-items: center; gap: 6px; font-size: 0.8rem;">
+                                📥 Export CSV
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table id="paymentsLedgerTable">
+                            <thead>
+                                <tr>
+                                    <th>Reference ID</th>
+                                    <th>Student User</th>
+                                    <th>Transaction Type</th>
+                                    <th>Date &amp; Time</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Injected programmatically -->
                             </tbody>
                         </table>
                     </div>

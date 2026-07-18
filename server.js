@@ -823,6 +823,20 @@ app.get('/api/admin/students/:id/transactions', authenticateToken, requireAdmin,
     });
 });
 
+// 5.8 Get All Payments and Transaction Logs (SCRUM-64)
+app.get('/api/admin/payments', authenticateToken, requireAdmin, (req, res) => {
+    db.all(`
+        SELECT t.id, t.referenceId, t.type, t.amount, t.status, t.createdAt, 
+               u.fullName, u.rollId, u.department
+        FROM transactions t
+        LEFT JOIN users u ON t.userId = u.id
+        ORDER BY t.createdAt DESC
+    `, (err, rows) => {
+        if (err) return res.status(500).json({ error: 'Database error fetching payment ledger: ' + err.message });
+        res.json(rows);
+    });
+});
+
 // 6. Get Printer Terminals
 app.get('/api/admin/printers', authenticateToken, requireAdmin, (req, res) => {
     db.all('SELECT * FROM printers', (err, rows) => {
