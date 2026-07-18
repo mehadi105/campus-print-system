@@ -1,6 +1,6 @@
 # Campus Printing System
 
-Campus Printing System for university students — submit print jobs, manage documents, and complete campus payments through a shared web application.
+Campus Printing System for university students â€” submit print jobs, manage documents, and complete campus payments through a shared web application.
 
 ## Project Overview
 
@@ -10,7 +10,7 @@ Campus Printing System for university students — submit print jobs, manage doc
 | Methodology | Scrum |
 | Sprints | 3 |
 | Stories per sprint | 4 |
-| Branching model | Git Flow–style (`main` + `develop` + feature branches) |
+| Branching model | Git Flowâ€“style (`main` + `develop` + feature branches) |
 
 **Story 1 (completed):** Login UI, Register UI, Login API, Register API.
 
@@ -20,12 +20,12 @@ Future stories are delivered as Jira subtasks on feature branches merged into `d
 
 ```text
 /
-├── frontend/          # Student-facing HTML/CSS (and future UI)
-├── backend/           # Express API
-├── docs/              # SRS, diagrams, API docs, Git workflow
-├── .github/           # PR and issue templates
-├── README.md
-└── LICENSE
+â”œâ”€â”€ frontend/          # Student-facing HTML/CSS (and future UI)
+â”œâ”€â”€ backend/           # Express API
+â”œâ”€â”€ docs/              # SRS, diagrams, API docs, Git workflow
+â”œâ”€â”€ .github/           # PR and issue templates
+â”œâ”€â”€ README.md
+â””â”€â”€ LICENSE
 ```
 
 ## Tech Stack
@@ -69,7 +69,7 @@ Full guide: [docs/GIT_WORKFLOW.md](docs/GIT_WORKFLOW.md)
 ## Git Workflow
 
 ```text
-feature/*  →  PR  →  develop  →  (sprint end) PR  →  main  →  tag (v0.1.0 / v0.2.0 / v1.0.0)
+feature/*  â†’  PR  â†’  develop  â†’  (sprint end) PR  â†’  main  â†’  tag (v0.1.0 / v0.2.0 / v1.0.0)
 ```
 
 - Feature branches start from `develop`.
@@ -99,7 +99,7 @@ git checkout -b feature/<story>-<subtask>
 At the end of each sprint:
 
 1. Test everything on `develop`
-2. Open a PR: `develop` → `main`
+2. Open a PR: `develop` â†’ `main`
 3. Merge the release PR
 4. Tag on `main`: `v0.1.0`, `v0.2.0`, then `v1.0.0`
 
@@ -146,7 +146,7 @@ test(login): add authentication tests
 
 ## Backend API (Story 1)
 
-### Login — `POST /api/auth/login`
+### Login â€” `POST /api/auth/login`
 
 ```json
 {
@@ -155,7 +155,7 @@ test(login): add authentication tests
 }
 ```
 
-### Register — `POST /api/auth/register`
+### Register â€” `POST /api/auth/register`
 
 ```json
 {
@@ -201,7 +201,7 @@ npm run test:documents
 Body fields aligned with Imtiaj print order UI:
 `studentEmail`, `documentName`, `copies`, `colorMode`, `duplex`, `orientation`, `paperSize`, `pageRange`, `printerTerminal`, `pages`, `paymentMethod`, optional `estimatedCost` / `documentId`.
 
-Cost formula matches SCRUM-50 (B&W/Color × duplex × Legal surcharge).
+Cost formula matches SCRUM-50 (B&W/Color Ã— duplex Ã— Legal surcharge).
 
 ### Save Order to Database (SCRUM-51)
 
@@ -211,10 +211,10 @@ Orders persist in:
 
 ### Order Status & History APIs (SCRUM-55)
 
-- `GET /api/orders/:id/status` — current status for tracking
-- `GET /api/orders/history?email=student@university.edu` — previous orders
+- `GET /api/orders/:id/status` â€” current status for tracking
+- `GET /api/orders/history?email=student@university.edu` â€” previous orders
 
 ## License
 
-ISC — see [LICENSE](LICENSE).
+ISC â€” see [LICENSE](LICENSE).
 

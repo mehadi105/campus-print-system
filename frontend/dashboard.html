@@ -364,6 +364,17 @@
                             <p class="eyebrow">Full print logs</p>
                             <h3>Print History</h3>
                         </div>
+                        <div class="history-filters" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                            <input id="orderSearchInput" type="search" placeholder="Search document or terminal" style="padding:8px 12px; border-radius:10px; border:1px solid var(--border); min-width:220px;">
+                            <select id="orderStatusFilter" style="padding:8px 12px; border-radius:10px; border:1px solid var(--border);">
+                                <option value="">All statuses</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Processing">Processing</option>
+                                <option value="Completed">Completed</option>
+                                <option value="Cancelled">Cancelled</option>
+                            </select>
+                            <button type="button" id="orderHistoryRefreshBtn" class="create-btn" style="padding:8px 14px; font-size:0.85rem;">Refresh</button>
+                        </div>
                     </div>
 
                     <div class="table-wrapper">
@@ -377,48 +388,9 @@
                                     <th>Status</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="orderHistoryBody">
                                 <tr>
-                                    <td>Final Report Draft</td>
-                                    <td>15 Jul, 2026</td>
-                                    <td>48</td>
-                                    <td>৳ 120</td>
-                                    <td><span class="status-badge completed">Completed</span></td>
-                                </tr>
-                                <tr>
-                                    <td>Lab Assignment 08</td>
-                                    <td>14 Jul, 2026</td>
-                                    <td>24</td>
-                                    <td>৳ 72</td>
-                                    <td><span class="status-badge completed">Completed</span></td>
-                                </tr>
-                                <tr>
-                                    <td>Research Proposal</td>
-                                    <td>13 Jul, 2026</td>
-                                    <td>96</td>
-                                    <td>৳ 240</td>
-                                    <td><span class="status-badge completed">Completed</span></td>
-                                </tr>
-                                <tr>
-                                    <td>Lecture Notes Pack</td>
-                                    <td>12 Jul, 2026</td>
-                                    <td>32</td>
-                                    <td>৳ 88</td>
-                                    <td><span class="status-badge completed">Completed</span></td>
-                                </tr>
-                                <tr>
-                                    <td>Homework 3 Solutions</td>
-                                    <td>10 Jul, 2026</td>
-                                    <td>12</td>
-                                    <td>৳ 36</td>
-                                    <td><span class="status-badge completed">Completed</span></td>
-                                </tr>
-                                <tr>
-                                    <td>Physics Lab Report</td>
-                                    <td>08 Jul, 2026</td>
-                                    <td>18</td>
-                                    <td>৳ 54</td>
-                                    <td><span class="status-badge completed">Completed</span></td>
+                                    <td colspan="5">Loading previous orders…</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -630,5 +602,6 @@
     <script src="script.js"></script>
     <script src="upload.js"></script>
     <script src="profile.js"></script>
+    <script src="orderHistory.js"></script>
 </body>
 </html>
