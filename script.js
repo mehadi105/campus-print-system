@@ -113,12 +113,33 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('currentStudent', JSON.stringify(body.student));
             showMessage('Login successful. Redirecting...', 'success');
             setTimeout(() => {
-                window.location.href = 'dashboard.html';
+                if (body.role === 'Admin') {
+                    window.location.href = 'admin.html';
+                } else {
+                    window.location.href = 'dashboard.html';
+                }
             }, 700);
         })
         .catch(err => {
             // Local fallback if API is offline
             console.warn('API offline. Toggling local authentication fallback.', err);
+            
+            // Check offline admin login
+            if ((email.toLowerCase() === 'admin' || email.toLowerCase() === 'admin@campusprint.com') && password === 'admin123') {
+                localStorage.setItem('token', 'mock-jwt-admin-token-xyz');
+                localStorage.setItem('currentStudent', JSON.stringify({
+                    fullName: 'Admin Office',
+                    rollId: 'admin',
+                    email: 'admin@campusprint.com',
+                    role: 'Admin'
+                }));
+                showMessage('Login successful (Offline Admin).', 'success');
+                setTimeout(() => {
+                    window.location.href = 'admin.html';
+                }, 700);
+                return;
+            }
+
             const registeredStudent = JSON.parse(localStorage.getItem('registeredStudent') || 'null');
             if (registeredStudent && 
                 (registeredStudent.email === email.toLowerCase() || registeredStudent.rollId === email) && 

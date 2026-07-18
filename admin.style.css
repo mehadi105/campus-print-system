@@ -1,0 +1,185 @@
+/* ── Admin Dashboard Style Sheets (SCRUM-58) ── */
+
+:root {
+    --primary-admin: #4f46e5;
+    --primary-admin-hover: #4338ca;
+    --primary-admin-soft: rgba(79, 70, 229, 0.1);
+}
+
+/* Accent Indigo override for Sidebar active states */
+.sidebar .nav-item.active {
+    background: var(--primary-admin-soft) !important;
+    color: var(--primary-admin) !important;
+    border-left-color: var(--primary-admin) !important;
+}
+
+.avatar {
+    background: var(--primary-admin) !important;
+}
+
+/* General tab toggle controls */
+.tab-content {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.tab-content.active {
+    display: block;
+    opacity: 1;
+}
+
+/* Action button configurations */
+.action-btn-group {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.admin-btn {
+    border: none;
+    padding: 6px 12px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-process {
+    background: var(--primary-admin-soft);
+    color: var(--primary-admin);
+}
+
+.btn-process:hover {
+    background: var(--primary-admin);
+    color: white;
+}
+
+.btn-complete {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.btn-complete:hover {
+    background: #10b981;
+    color: white;
+}
+
+.btn-reject {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.btn-reject:hover {
+    background: #ef4444;
+    color: white;
+}
+
+/* Printer Terminal Cards */
+.printer-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.printer-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.printer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.printer-name {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text);
+    margin: 0;
+}
+
+.printer-status-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.74rem;
+    font-weight: 700;
+}
+
+.printer-status-badge.online {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.printer-status-badge.offline {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.printer-details {
+    font-size: 0.8rem;
+    color: var(--muted);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.printer-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.printer-btn {
+    flex: 1;
+    border: 1px solid var(--border);
+    background: transparent;
+    padding: 8px 12px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text);
+}
+
+.printer-btn:hover {
+    background: var(--surface-2);
+    border-color: var(--muted);
+}
+
+.printer-btn.toggle-online {
+    background: var(--primary-admin-soft);
+    color: var(--primary-admin);
+    border-color: transparent;
+}
+
+.printer-btn.toggle-online:hover {
+    background: var(--primary-admin);
+    color: white;
+}
+
+/* Modal configuration overrides */
+.form-group-admin input:focus {
+    border-color: var(--primary-admin) !important;
+}
+
+/* Dark mode configurations */
+@media (prefers-color-scheme: dark) {
+    .printer-card {
+        background: #1e293b;
+        border-color: #2d3a4f;
+    }
+    
+    .printer-btn:hover {
+        background: #2a3548;
+    }
+}

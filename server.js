@@ -40,10 +40,18 @@ function createTables() {
             walletBalance REAL DEFAULT 1250.0,
             usedPages INTEGER DEFAULT 50,
             totalPages INTEGER DEFAULT 100,
-            status TEXT DEFAULT 'Active'
+            status TEXT DEFAULT 'Active',
+            role TEXT DEFAULT 'Student'
         )
     `, (err) => {
-        if (err) console.error('Error creating users table:', err.message);
+        if (err) {
+            console.error('Error creating users table:', err.message);
+        } else {
+            // Alter users table to add role column in case it already exists
+            db.run("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'Student'", (alterErr) => {
+                seedAdminUser();
+            });
+        }
     });
 
     // Create documents table (SCRUM-32)
@@ -111,8 +119,74 @@ function createTables() {
             FOREIGN KEY (userId) REFERENCES users (id) ON DELETE CASCADE
         )
     `, (err) => {
-        if (err) console.error('Error creating transactions table:', err.message);
+        if (err) {
+            console.error('Error creating transactions table:', err.message);
+        } else {
+            // Create printers table (SCRUM-58)
+            db.run(`
+                CREATE TABLE IF NOT EXISTS printers (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT UNIQUE NOT NULL,
+                    location TEXT NOT NULL,
+                    status TEXT DEFAULT 'Online',
+                    paperCount INTEGER DEFAULT 500
+                )
+            `, (err) => {
+                if (err) {
+                    console.error('Error creating printers table:', err.message);
+                } else {
+                    seedPrinters();
+                }
+            });
+        }
     });
+}
+
+// Seeding and Admin Helper functions (SCRUM-58)
+function seedAdminUser() {
+    const adminRollId = 'admin';
+    db.get('SELECT * FROM users WHERE rollId = ?', [adminRollId], (err, row) => {
+        if (err) return console.error('Error checking admin user:', err.message);
+        if (!row) {
+            const hashedPassword = bcrypt.hashSync('admin123', 10);
+            db.run(`
+                INSERT INTO users (fullName, rollId, department, email, session, semester, password, role)
+                VALUES ('Admin Office', 'admin', 'Administration', 'admin@campusprint.com', 'N/A', 'N/A', ?, 'Admin')
+            `, [hashedPassword], (err) => {
+                if (err) {
+                    console.error('Error seeding admin user:', err.message);
+                } else {
+                    console.log('Seeded default admin user: rollId="admin", password="admin123"');
+                }
+            });
+        }
+    });
+}
+
+function seedPrinters() {
+    const defaultPrinters = [
+        { name: 'Central Library - T1', location: 'Central Library, Ground Floor' },
+        { name: 'CSE Lab - T2', location: 'CSE Dept, 3rd Floor' },
+        { name: 'Science Building - T3', location: 'Science Building Lobby' }
+    ];
+
+    defaultPrinters.forEach(p => {
+        db.get('SELECT * FROM printers WHERE name = ?', [p.name], (err, row) => {
+            if (err) return console.error('Error checking printer:', err.message);
+            if (!row) {
+                db.run('INSERT INTO printers (name, location, status, paperCount) VALUES (?, ?, "Online", 500)', [p.name, p.location]);
+            }
+        });
+    });
+}
+
+// Admin Authorization Middleware (SCRUM-58)
+function requireAdmin(req, res, next) {
+    if (req.user && req.user.role === 'Admin') {
+        next();
+    } else {
+        res.status(403).json({ error: 'Access denied. Administrator privileges required.' });
+    }
 }
 
 // ── JWT Authentication Middleware ──
@@ -188,7 +262,7 @@ app.post('/api/auth/login', (req, res) => {
 
         // Generate JWT token
         const token = jwt.sign(
-            { id: user.id, email: user.email, rollId: user.rollId },
+            { id: user.id, email: user.email, rollId: user.rollId, role: user.role },
             JWT_SECRET,
             { expiresIn: '7d' }
         );
@@ -198,7 +272,8 @@ app.post('/api/auth/login', (req, res) => {
 
         res.json({
             token,
-            student: userWithoutPassword
+            student: userWithoutPassword,
+            role: user.role
         });
     });
 });
@@ -537,6 +612,201 @@ app.post('/api/wallet/topup', authenticateToken, (req, res) => {
                     student: userWithoutPassword
                 });
             });
+        });
+    });
+});
+
+
+// ── ADMINISTRATOR ENDPOINTS (SCRUM-58) ──
+
+// 1. Get Admin Dashboard Stats
+app.get('/api/admin/stats', authenticateToken, requireAdmin, (req, res) => {
+    const stats = {
+        activeJobs: 0,
+        completedJobs: 0,
+        totalRevenue: 0.0,
+        studentCount: 0
+    };
+
+    db.get("SELECT COUNT(*) as cnt FROM print_orders WHERE status IN ('Pending', 'Processing', 'Submitted')", (err, activeRow) => {
+        if (err) return res.status(500).json({ error: 'Stats database error: ' + err.message });
+        stats.activeJobs = activeRow.cnt;
+
+        db.get("SELECT COUNT(*) as cnt FROM print_orders WHERE status = 'Completed'", (err, completedRow) => {
+            if (err) return res.status(500).json({ error: 'Stats database error: ' + err.message });
+            stats.completedJobs = completedRow.cnt;
+
+            db.get("SELECT SUM(estimatedCost) as total FROM print_orders WHERE paymentMethod = 'Wallet' AND status = 'Completed'", (err, revenueRow) => {
+                if (err) return res.status(500).json({ error: 'Stats database error: ' + err.message });
+                stats.totalRevenue = revenueRow.total || 0;
+
+                db.get("SELECT COUNT(*) as cnt FROM users WHERE role = 'Student'", (err, studentRow) => {
+                    if (err) return res.status(500).json({ error: 'Stats database error: ' + err.message });
+                    stats.studentCount = studentRow.cnt;
+                    
+                    res.json(stats);
+                });
+            });
+        });
+    });
+});
+
+// 2. Get All Print Orders (for Admin Queue)
+app.get('/api/admin/print-orders', authenticateToken, requireAdmin, (req, res) => {
+    const sql = `
+        SELECT print_orders.*, users.fullName, users.rollId
+        FROM print_orders
+        JOIN users ON print_orders.userId = users.id
+        ORDER BY print_orders.createdAt DESC
+    `;
+    db.all(sql, (err, rows) => {
+        if (err) return res.status(500).json({ error: 'Database error fetching admin queue: ' + err.message });
+        res.json(rows);
+    });
+});
+
+// 3. Update Print Job Status (Process, Complete, Reject)
+app.post('/api/admin/print-orders/:id/status', authenticateToken, requireAdmin, (req, res) => {
+    const orderId = req.params.id;
+    const { status } = req.body; // 'Processing', 'Completed', 'Rejected'
+
+    if (!status) return res.status(400).json({ error: 'Please provide status.' });
+
+    // Fetch order to check details
+    db.get('SELECT * FROM print_orders WHERE id = ?', [orderId], (err, order) => {
+        if (err) return res.status(500).json({ error: 'Database error finding order: ' + err.message });
+        if (!order) return res.status(404).json({ error: 'Print order not found.' });
+
+        const previousStatus = order.status;
+
+        // Perform state update
+        db.run('UPDATE print_orders SET status = ? WHERE id = ?', [status, orderId], (err) => {
+            if (err) return res.status(500).json({ error: 'Database error updating status: ' + err.message });
+
+            // Handle Rejection Refund logic
+            if (status === 'Rejected' && previousStatus !== 'Rejected' && previousStatus !== 'Cancelled') {
+                const refundPages = order.pages * order.copies;
+                const refundCost = order.estimatedCost;
+                const userId = order.userId;
+
+                db.get('SELECT * FROM users WHERE id = ?', [userId], (err, user) => {
+                    if (err || !user) return console.error('Error fetching student for admin refund');
+
+                    if (order.paymentMethod === 'Quota') {
+                        const newUsed = Math.max(user.usedPages - refundPages, 0);
+                        db.run('UPDATE users SET usedPages = ? WHERE id = ?', [newUsed, userId]);
+                    } else {
+                        const newBal = user.walletBalance + refundCost;
+                        db.run('UPDATE users SET walletBalance = ? WHERE id = ?', [newBal, userId]);
+                    }
+
+                    // Log transaction entry
+                    const txnRef = 'TXN-' + Math.floor(10000 + Math.random() * 90000);
+                    const txnType = order.paymentMethod === 'Quota' ? 'Admin Quota Refund' : 'Admin Wallet Refund';
+                    const txnAmt = order.paymentMethod === 'Quota' ? 0 : refundCost;
+
+                    db.run(`
+                        INSERT INTO transactions (userId, referenceId, type, amount, status)
+                        VALUES (?, ?, ?, ?, 'Success')
+                    `, [userId, txnRef, txnType, txnAmt]);
+                });
+            }
+
+            res.json({ message: `Print order status updated to ${status} successfully.` });
+        });
+    });
+});
+
+// 4. Get Registered Students
+app.get('/api/admin/students', authenticateToken, requireAdmin, (req, res) => {
+    db.all("SELECT id, fullName, rollId, department, email, session, semester, walletBalance, usedPages, totalPages, status FROM users WHERE role = 'Student'", (err, rows) => {
+        if (err) return res.status(500).json({ error: 'Database error fetching students: ' + err.message });
+        res.json(rows);
+    });
+});
+
+// 5. Adjust Student Balance/Quota
+app.post('/api/admin/students/:id/adjust', authenticateToken, requireAdmin, (req, res) => {
+    const studentId = req.params.id;
+    const { amount, quotaAdjustment } = req.body; // e.g. amount = 500, quotaAdjustment = 50
+
+    db.get('SELECT * FROM users WHERE id = ? AND role = "Student"', [studentId], (err, user) => {
+        if (err) return res.status(500).json({ error: 'Database error finding student: ' + err.message });
+        if (!user) return res.status(404).json({ error: 'Student not found.' });
+
+        let updatedBalance = user.walletBalance;
+        let updatedTotalPages = user.totalPages;
+
+        let logTxns = [];
+
+        if (amount && amount !== 0) {
+            updatedBalance += amount;
+            logTxns.push({
+                type: 'Admin Cash Top-up',
+                amount: amount
+            });
+        }
+
+        if (quotaAdjustment && quotaAdjustment !== 0) {
+            updatedTotalPages += quotaAdjustment;
+            logTxns.push({
+                type: 'Admin Quota Adjustment',
+                amount: 0
+            });
+        }
+
+        db.run('UPDATE users SET walletBalance = ?, totalPages = ? WHERE id = ?', [updatedBalance, updatedTotalPages, studentId], (err) => {
+            if (err) return res.status(500).json({ error: 'Database error adjusting student account: ' + err.message });
+
+            // Log transactions
+            logTxns.forEach(t => {
+                const txnRef = 'TXN-' + Math.floor(10000 + Math.random() * 90000);
+                db.run(`
+                    INSERT INTO transactions (userId, referenceId, type, amount, status)
+                    VALUES (?, ?, ?, ?, 'Success')
+                `, [studentId, txnRef, t.type, t.amount]);
+            });
+
+            res.json({ message: 'Student account adjusted successfully.' });
+        });
+    });
+});
+
+// 6. Get Printer Terminals
+app.get('/api/admin/printers', authenticateToken, requireAdmin, (req, res) => {
+    db.all('SELECT * FROM printers', (err, rows) => {
+        if (err) return res.status(500).json({ error: 'Database error fetching printers: ' + err.message });
+        res.json(rows);
+    });
+});
+
+// 7. Update Printer Status
+app.post('/api/admin/printers/:id/status', authenticateToken, requireAdmin, (req, res) => {
+    const printerId = req.params.id;
+    const { status, paperCount } = req.body; // status: 'Online' / 'Offline', paperCount: optional integer
+
+    db.get('SELECT * FROM printers WHERE id = ?', [printerId], (err, printer) => {
+        if (err) return res.status(500).json({ error: 'Database error finding printer: ' + err.message });
+        if (!printer) return res.status(404).json({ error: 'Printer terminal not found.' });
+
+        let sql = 'UPDATE printers SET ';
+        const params = [];
+        if (status) {
+            sql += 'status = ?, ';
+            params.push(status);
+        }
+        if (paperCount !== undefined) {
+            sql += 'paperCount = ?, ';
+            params.push(paperCount);
+        }
+
+        // Clean final comma
+        sql = sql.slice(0, -2) + ' WHERE id = ?';
+        params.push(printerId);
+
+        db.run(sql, params, (err) => {
+            if (err) return res.status(500).json({ error: 'Database error updating printer: ' + err.message });
+            res.json({ message: 'Printer terminal status updated successfully.' });
         });
     });
 });
