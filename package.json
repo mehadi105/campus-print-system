@@ -13,7 +13,8 @@
     "test:dashboard": "node --test backend/tests/dashboard.test.js",
     "test:upload": "node --test backend/tests/upload.test.js",
     "test:documents": "node --test backend/tests/documentManagement.test.js",
-    "test:orders": "node --test backend/tests/orderTracking.test.js"
+    "test:orders": "node --test backend/tests/orderTracking.test.js",
+    "test:admin-orders": "node --test backend/tests/adminOrders.test.js"
   },
   "keywords": [
     "campus",
