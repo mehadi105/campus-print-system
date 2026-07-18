@@ -2087,3 +2087,27 @@ tbody tr:hover {
         color: white !important;
     }
 }
+
+/* ── Print Preview Visualizer (SCRUM-45) ── */
+@media (prefers-color-scheme: dark) {
+    .print-preview-container {
+        background: #1e293b !important;
+        border-color: #2d3a4f !important;
+    }
+    #previewPaper {
+        background: #0f1419 !important;
+        border-color: #2d3a4f !important;
+    }
+    #previewPaperBack {
+        background: #1e2838 !important;
+        border-color: #2d3a4f !important;
+    }
+    .preview-line.header {
+        background: #475569 !important;
+    }
+    .preview-line.line1,
+    .preview-line.line2,
+    .preview-line.line3 {
+        background: #334155 !important;
+    }
+}

@@ -716,6 +716,29 @@
                     <!-- Right: Cost Summary & Wallet Validation -->
                     <div class="print-modal-summary-side">
                         <div class="summary-card-inner">
+                            <!-- Dynamic Print Preview Visualizer (SCRUM-45) -->
+                            <div class="print-preview-container" style="display: flex; justify-content: center; align-items: center; background: #e2e8f0; height: 160px; border-radius: 16px; margin-bottom: 12px; position: relative; overflow: hidden; border: 1px solid var(--border);">
+                                <div id="previewPaper" style="width: 80px; height: 110px; background: white; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08); position: relative; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; justify-content: space-between; padding: 10px; box-sizing: border-box;">
+                                    <!-- Duplex offset sheet -->
+                                    <div id="previewPaperBack" style="position: absolute; width: 100%; height: 100%; top: 4px; left: 4px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; z-index: -1; box-shadow: 0 4px 10px rgba(0,0,0,0.04); display: none;"></div>
+                                    
+                                    <!-- Fake document text lines -->
+                                    <div class="preview-content" style="display: flex; flex-direction: column; gap: 4px; width: 100%;">
+                                        <div class="preview-line header" style="height: 6px; width: 50%; background: #94a3b8; border-radius: 2px; transition: background 0.2s;"></div>
+                                        <div class="preview-line line1" style="height: 4px; width: 100%; background: #cbd5e1; border-radius: 2px; transition: background 0.2s;"></div>
+                                        <div class="preview-line line2" style="height: 4px; width: 85%; background: #cbd5e1; border-radius: 2px; transition: background 0.2s;"></div>
+                                        <div class="preview-line line3" style="height: 4px; width: 90%; background: #cbd5e1; border-radius: 2px; transition: background 0.2s;"></div>
+                                    </div>
+                                    <div class="preview-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                        <span id="previewPageIndicator" style="font-size: 8px; font-weight: 700; color: #94a3b8; font-family: monospace;">1/10</span>
+                                        <div id="previewColorIndicator" style="width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; transition: background 0.2s;"></div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Copies badge -->
+                                <div id="previewCopiesBadge" style="position: absolute; top: 12px; right: 12px; background: var(--primary); color: white; font-size: 0.72rem; font-weight: 800; padding: 4px 10px; border-radius: 20px; box-shadow: 0 4px 12px rgba(37,99,235,0.25); transition: all 0.2s;">1 copy</div>
+                            </div>
+
                             <h4>Print Order Summary</h4>
                             
                             <div class="summary-details">

@@ -855,6 +855,61 @@ document.addEventListener('DOMContentLoaded', () => {
             summaryUnitCost.textContent = `৳ ${unitCost.toFixed(2)} / page`;
             summaryTotalCost.textContent = `৳ ${estTotalCost.toFixed(2)}`;
 
+            // ── Update Print Preview Visualizer (SCRUM-45) ──
+            const previewPaper = document.getElementById('previewPaper');
+            const previewPaperBack = document.getElementById('previewPaperBack');
+            const previewPageIndicator = document.getElementById('previewPageIndicator');
+            const previewColorIndicator = document.getElementById('previewColorIndicator');
+            const previewCopiesBadge = document.getElementById('previewCopiesBadge');
+
+            if (previewPaper) {
+                // Orientation rotation
+                if (printOrientation && printOrientation.value === 'Landscape') {
+                    previewPaper.style.width = '110px';
+                    previewPaper.style.height = '80px';
+                } else {
+                    previewPaper.style.width = '80px';
+                    previewPaper.style.height = '110px';
+                }
+
+                // Duplex backing sheet toggle
+                if (previewPaperBack) {
+                    previewPaperBack.style.display = isDuplex ? 'block' : 'none';
+                }
+
+                // Copies badge text
+                if (previewCopiesBadge) {
+                    previewCopiesBadge.textContent = `${copies} cop${copies > 1 ? 'ies' : 'y'}`;
+                }
+
+                // Page indicators
+                if (previewPageIndicator) {
+                    previewPageIndicator.textContent = `1/${printPages}`;
+                }
+
+                // Color lines & indicator toggle
+                const headerLine = previewPaper.querySelector('.preview-line.header');
+                const detailLines = previewPaper.querySelectorAll('.preview-line:not(.header)');
+                
+                if (isColor) {
+                    if (previewColorIndicator) {
+                        previewColorIndicator.style.background = 'linear-gradient(135deg, #3b82f6, #ec4899)';
+                    }
+                    if (headerLine) headerLine.style.background = '#2563eb';
+                    detailLines.forEach((line, idx) => {
+                        line.style.background = idx % 2 === 0 ? '#60a5fa' : '#f472b6';
+                    });
+                } else {
+                    if (previewColorIndicator) {
+                        previewColorIndicator.style.background = '#94a3b8';
+                    }
+                    if (headerLine) headerLine.style.background = '#64748b';
+                    detailLines.forEach(line => {
+                        line.style.background = '#cbd5e1';
+                    });
+                }
+            }
+
             // Sync user data for budget validations
             const student = JSON.parse(localStorage.getItem('currentStudent') || 'null');
             if (student) {
