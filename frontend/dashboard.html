@@ -356,24 +356,56 @@
                 </section>
             </div>
 
-            <!-- TAB 3: Print History View -->
+            <!-- TAB 3: Print History View (SCRUM-54) -->
             <div id="history-view" class="tab-content">
+                <!-- History stats metrics row -->
+                <div class="history-metrics-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 20px;">
+                    <div class="history-metric-card" style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 12px;">
+                        <span style="font-size: 1.5rem;">📋</span>
+                        <div>
+                            <span style="font-size: 0.72rem; color: var(--muted); font-weight: 700; text-transform: uppercase;">Total Orders</span>
+                            <h4 id="historyStatTotalOrders" style="margin: 2px 0 0 0; font-size: 1.15rem; font-weight: 800; color: var(--text);">0</h4>
+                        </div>
+                    </div>
+                    <div class="history-metric-card" style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 12px;">
+                        <span style="font-size: 1.5rem;">📄</span>
+                        <div>
+                            <span style="font-size: 0.72rem; color: var(--muted); font-weight: 700; text-transform: uppercase;">Total Pages</span>
+                            <h4 id="historyStatTotalPages" style="margin: 2px 0 0 0; font-size: 1.15rem; font-weight: 800; color: var(--text);">0 pgs</h4>
+                        </div>
+                    </div>
+                    <div class="history-metric-card" style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 12px;">
+                        <span style="font-size: 1.5rem;">৳</span>
+                        <div>
+                            <span style="font-size: 0.72rem; color: var(--muted); font-weight: 700; text-transform: uppercase;">Cash Expensed</span>
+                            <h4 id="historyStatTotalCost" style="margin: 2px 0 0 0; font-size: 1.15rem; font-weight: 800; color: var(--text);">৳ 0.00</h4>
+                        </div>
+                    </div>
+                </div>
+
                 <section class="table-card">
-                    <div class="table-header">
+                    <div class="table-header" style="flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between;">
                         <div>
                             <p class="eyebrow">Full print logs</p>
                             <h3>Print History</h3>
                         </div>
-                        <div class="history-filters" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-                            <input id="orderSearchInput" type="search" placeholder="Search document or terminal" style="padding:8px 12px; border-radius:10px; border:1px solid var(--border); min-width:220px;">
-                            <select id="orderStatusFilter" style="padding:8px 12px; border-radius:10px; border:1px solid var(--border);">
+                        <div class="history-toolbar" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+                            <input id="orderSearchInput" type="search" placeholder="Search document or terminal" style="padding: 8px 14px; font-size: 0.8rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); outline: none; min-width: 180px; font-weight: 600;">
+                            <select id="orderStatusFilter" style="padding: 8px 10px; font-size: 0.8rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); outline: none; font-weight: 600;">
                                 <option value="">All statuses</option>
                                 <option value="Pending">Pending</option>
                                 <option value="Processing">Processing</option>
                                 <option value="Completed">Completed</option>
                                 <option value="Cancelled">Cancelled</option>
                             </select>
-                            <button type="button" id="orderHistoryRefreshBtn" class="create-btn" style="padding:8px 14px; font-size:0.85rem;">Refresh</button>
+                            <select id="historyFilterPayment" style="padding: 8px 10px; font-size: 0.8rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); outline: none; font-weight: 600;">
+                                <option value="All">All Payments</option>
+                                <option value="Quota">Quota</option>
+                                <option value="Wallet">Wallet</option>
+                            </select>
+                            <button type="button" id="orderHistoryRefreshBtn" class="create-btn" style="padding: 8px 14px; font-size: 0.8rem; font-weight: 700; height: 34px; line-height: 1; border-radius: 10px;">Refresh</button>
+                            <button type="button" id="exportHistoryBtn" class="secondary-btn" style="padding: 8px 14px; font-size: 0.8rem; font-weight: 700; height: 34px; line-height: 1; border-radius: 10px;">Export CSV</button>
+
                         </div>
                     </div>
 
@@ -403,12 +435,15 @@
                 <div class="billing-grid">
                     <div class="billing-main">
                         <section class="stats-grid" style="grid-template-columns: 1fr; margin-bottom: 20px;">
-                            <article class="stat-card accent-blue" style="padding: 24px;">
-                                <div class="stat-icon" style="width: 60px; height: 60px; font-size: 1.8rem;">💰</div>
-                                <div>
-                                    <p class="stat-label" style="font-size: 0.95rem; margin-bottom: 6px;">Available Balance</p>
-                                    <h2 id="wallet-balance-billing" style="font-size: 2.2rem; font-weight: 800; color: var(--text); margin: 0;">৳ 1,250</h2>
+                            <article class="stat-card accent-blue" style="padding: 24px; display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                <div style="display: flex; align-items: center; gap: 14px;">
+                                    <div class="stat-icon" style="width: 60px; height: 60px; font-size: 1.8rem;">💰</div>
+                                    <div>
+                                        <p class="stat-label" style="font-size: 0.95rem; margin-bottom: 6px;">Available Balance</p>
+                                        <h2 id="wallet-balance-billing" style="font-size: 2.2rem; font-weight: 800; color: var(--text); margin: 0;">৳ 1,250</h2>
+                                    </div>
                                 </div>
+                                <button type="button" class="create-btn" id="topupWalletBtn" style="padding: 10px 20px; font-size: 0.9rem;">＋ Top-up Wallet</button>
                             </article>
                         </section>
 
@@ -489,23 +524,23 @@
                             <h3>Workspace Settings</h3>
                         </div>
                     </div>
-                    <form style="display: grid; gap: 20px; max-width: 520px; padding: 12px 6px;">
+                    <form id="settingsForm" style="display: grid; gap: 20px; max-width: 520px; padding: 12px 6px;">
                         <div style="display: grid; gap: 8px;">
                             <label style="font-weight: 600; font-size: 0.95rem; color: var(--text);">Default Print Preferences</label>
-                            <select style="padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); outline: none; font-weight: 600;">
-                                <option>Double-Sided (Duplex) • Black & White</option>
-                                <option>Single-Sided (Simplex) • Black & White</option>
-                                <option>Double-Sided (Duplex) • Color Accent</option>
-                                <option>Single-Sided (Simplex) • Color Accent</option>
+                            <select id="defaultPrintPref" style="padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); outline: none; font-weight: 600;">
+                                <option value="duplex_bw">Double-Sided (Duplex) • Black & White</option>
+                                <option value="simplex_bw">Single-Sided (Simplex) • Black & White</option>
+                                <option value="duplex_color">Double-Sided (Duplex) • Color Accent</option>
+                                <option value="simplex_color">Single-Sided (Simplex) • Color Accent</option>
                             </select>
                         </div>
                         <div style="display: grid; gap: 8px;">
                             <label style="font-weight: 600; font-size: 0.95rem; color: var(--text);">Default Printer Terminal</label>
-                            <select style="padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); outline: none; font-weight: 600;">
-                                <option>Central Library - Terminal 1</option>
-                                <option>Central Library - Terminal 2</option>
-                                <option>Science Annex Hallway - Terminal A</option>
-                                <option>CSE Department Main Lab - Terminal B</option>
+                            <select id="defaultPrinterTerminal" style="padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); outline: none; font-weight: 600;">
+                                <option value="Central Library - Terminal 1">Central Library - Terminal 1</option>
+                                <option value="Central Library - Terminal 2">Central Library - Terminal 2</option>
+                                <option value="Science Annex Hallway - Terminal A">Science Annex Hallway - Terminal A</option>
+                                <option value="CSE Department Main Lab - Terminal B">CSE Department Main Lab - Terminal B</option>
                             </select>
                         </div>
                         <div style="display: flex; gap: 12px; align-items: center; padding: 6px 0;">
@@ -596,6 +631,300 @@
                     </div>
                 </form>
             </div>
+        </div>
+    </div>
+
+    <!-- Premium Print Order Modal (SCRUM-44) -->
+    <div class="modal-backdrop" id="printOrderModal">
+        <div class="modal-card modal-card-print">
+            <header class="modal-header">
+                <div>
+                    <p class="eyebrow">Configure Print Job</p>
+                    <h3>Place Print Order</h3>
+                </div>
+                <button type="button" class="modal-close" id="closePrintModalBtn" aria-label="Close modal">✕</button>
+            </header>
+
+            <form id="printOrderForm" class="print-order-form">
+                <div class="print-modal-layout">
+                    <!-- Left: Print Preferences Form -->
+                    <div class="print-modal-form-side">
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label for="printDocSelect" style="font-weight: 700; font-size: 0.82rem; color: var(--muted); display: block; margin-bottom: 6px;">Selected Document</label>
+                            <select id="printDocSelect" required class="form-control">
+                                <!-- Options will be dynamically populated -->
+                            </select>
+                        </div>
+                        
+                        <div class="form-grid-2" style="margin-bottom: 12px;">
+                            <div class="form-group">
+                                <label for="printCopies" style="font-weight: 700; font-size: 0.82rem; color: var(--muted); display: block; margin-bottom: 6px;">Number of Copies</label>
+                                <div class="copies-spinner" style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 12px; height: 46px; background: var(--surface-2); overflow: hidden;">
+                                    <button type="button" id="decCopiesBtn" style="border: none; background: transparent; width: 40px; height: 100%; font-size: 1.2rem; font-weight: 800; color: var(--muted); cursor: pointer; transition: background 0.15s; outline: none;">−</button>
+                                    <input type="number" id="printCopies" min="1" max="99" value="1" required style="border: none; background: transparent; flex: 1; text-align: center; font-weight: 700; font-size: 0.95rem; color: var(--text); outline: none; height: 100%; width: 100%;">
+                                    <button type="button" id="incCopiesBtn" style="border: none; background: transparent; width: 40px; height: 100%; font-size: 1.2rem; font-weight: 800; color: var(--muted); cursor: pointer; transition: background 0.15s; outline: none;">＋</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="printPaperSize" style="font-weight: 700; font-size: 0.82rem; color: var(--muted); display: block; margin-bottom: 6px;">Paper Size</label>
+                                <select id="printPaperSize" required class="form-control">
+                                    <option value="A4">A4 (Standard)</option>
+                                    <option value="Letter">Letter</option>
+                                    <option value="Legal">Legal</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-grid-2" style="margin-bottom: 12px;">
+                            <div class="form-group">
+                                <label style="font-weight: 700; font-size: 0.82rem; color: var(--muted); display: block; margin-bottom: 6px;">Color Mode</label>
+                                <div class="segmented-control">
+                                    <input type="radio" id="colorModeBW" name="printColorMode" value="Black & White" checked>
+                                    <label for="colorModeBW">B&W</label>
+                                    <input type="radio" id="colorModeColor" name="printColorMode" value="Color">
+                                    <label for="colorModeColor">Color</label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label style="font-weight: 700; font-size: 0.82rem; color: var(--muted); display: block; margin-bottom: 6px;">Layout (Sides)</label>
+                                <div class="segmented-control">
+                                    <input type="radio" id="duplexSingle" name="printDuplex" value="Single-Sided" checked>
+                                    <label for="duplexSingle">Simplex</label>
+                                    <input type="radio" id="duplexDouble" name="printDuplex" value="Double-Sided">
+                                    <label for="duplexDouble">Duplex</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-grid-2" style="margin-bottom: 12px;">
+                            <div class="form-group">
+                                <label for="printOrientation" style="font-weight: 700; font-size: 0.82rem; color: var(--muted); display: block; margin-bottom: 6px;">Orientation</label>
+                                <select id="printOrientation" required class="form-control">
+                                    <option value="Portrait">Portrait</option>
+                                    <option value="Landscape">Landscape</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="printPageRange" style="font-weight: 700; font-size: 0.82rem; color: var(--muted); display: block; margin-bottom: 6px;">Page Range</label>
+                                <input type="text" id="printPageRange" placeholder="e.g. All, 1-5" value="All" required class="form-control">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="printTerminal" style="font-weight: 700; font-size: 0.82rem; color: var(--muted); display: block; margin-bottom: 6px;">Printer Terminal</label>
+                            <select id="printTerminal" required class="form-control">
+                                <option value="Central Library - Terminal 1">Central Library - Terminal 1</option>
+                                <option value="Central Library - Terminal 2">Central Library - Terminal 2</option>
+                                <option value="Science Annex Hallway - Terminal A">Science Annex Hallway - Terminal A</option>
+                                <option value="CSE Department Main Lab - Terminal B">CSE Department Main Lab - Terminal B</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Right: Cost Summary & Wallet Validation -->
+                    <div class="print-modal-summary-side">
+                        <div class="summary-card-inner">
+                            <!-- Dynamic Print Preview Visualizer (SCRUM-45) -->
+                            <div class="print-preview-container" style="display: flex; justify-content: center; align-items: center; background: #e2e8f0; height: 160px; border-radius: 16px; margin-bottom: 12px; position: relative; overflow: hidden; border: 1px solid var(--border);">
+                                <div id="previewPaper" style="width: 80px; height: 110px; background: white; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08); position: relative; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; justify-content: space-between; padding: 10px; box-sizing: border-box;">
+                                    <!-- Duplex offset sheet -->
+                                    <div id="previewPaperBack" style="position: absolute; width: 100%; height: 100%; top: 4px; left: 4px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; z-index: -1; box-shadow: 0 4px 10px rgba(0,0,0,0.04); display: none;"></div>
+                                    
+                                    <!-- Fake document text lines -->
+                                    <div class="preview-content" style="display: flex; flex-direction: column; gap: 4px; width: 100%;">
+                                        <div class="preview-line header" style="height: 6px; width: 50%; background: #94a3b8; border-radius: 2px; transition: background 0.2s;"></div>
+                                        <div class="preview-line line1" style="height: 4px; width: 100%; background: #cbd5e1; border-radius: 2px; transition: background 0.2s;"></div>
+                                        <div class="preview-line line2" style="height: 4px; width: 85%; background: #cbd5e1; border-radius: 2px; transition: background 0.2s;"></div>
+                                        <div class="preview-line line3" style="height: 4px; width: 90%; background: #cbd5e1; border-radius: 2px; transition: background 0.2s;"></div>
+                                    </div>
+                                    <div class="preview-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                        <span id="previewPageIndicator" style="font-size: 8px; font-weight: 700; color: #94a3b8; font-family: monospace;">1/10</span>
+                                        <div id="previewColorIndicator" style="width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; transition: background 0.2s;"></div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Copies badge -->
+                                <div id="previewCopiesBadge" style="position: absolute; top: 12px; right: 12px; background: var(--primary); color: white; font-size: 0.72rem; font-weight: 800; padding: 4px 10px; border-radius: 20px; box-shadow: 0 4px 12px rgba(37,99,235,0.25); transition: all 0.2s;">1 copy</div>
+                            </div>
+
+                            <h4>Print Order Summary</h4>
+                            
+                            <div class="summary-details">
+                                <div class="summary-row">
+                                    <span>Document Pages:</span>
+                                    <strong id="summaryDocPages">-- pages</strong>
+                                </div>
+                                <div class="summary-row">
+                                    <span>Total Print Pages:</span>
+                                    <strong id="summaryTotalPages">-- pages</strong>
+                                </div>
+                                <div class="summary-row">
+                                    <span>Unit Cost:</span>
+                                    <strong id="summaryUnitCost">৳ 2.00 / page</strong>
+                                </div>
+                                <hr class="summary-divider">
+                                <div class="summary-row highlight" style="align-items: flex-start;">
+                                    <span>Estimated Cost:</span>
+                                    <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                                        <strong id="summaryTotalCost" class="cost-highlight" style="display: block;">৳ 0.00</strong>
+                                        <small id="summaryFormula" style="display: block; font-size: 0.68rem; color: var(--muted); margin-top: 4px; font-weight: 500; text-align: right; font-style: italic;"></small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="payment-method-section">
+                                <h5>Payment Method</h5>
+                                <div class="payment-options">
+                                    <label class="payment-option-card" id="paymentOptionQuotaCard">
+                                        <input type="radio" id="paymentMethodQuota" name="paymentMethod" value="Quota" checked>
+                                        <div class="payment-option-content">
+                                            <span class="option-title">Free Quota</span>
+                                            <span class="option-desc" id="quotaLimitLabel">Left: -- pages</span>
+                                        </div>
+                                    </label>
+                                    <label class="payment-option-card" id="paymentOptionWalletCard">
+                                        <input type="radio" id="paymentMethodWallet" name="paymentMethod" value="Wallet">
+                                        <div class="payment-option-content">
+                                            <span class="option-title">Wallet</span>
+                                            <span class="option-desc" id="walletBalanceLabel">Bal: ৳ 0</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div id="printValidationWarning" class="validation-warning" style="display: none; margin-top: 8px;">
+                                ⚠️ Insufficient quota or balance.
+                            </div>
+
+                            <div class="modal-actions-print" style="margin-top: 16px;">
+                                <button type="button" class="secondary-btn" id="cancelPrintBtn">Cancel</button>
+                                <button type="submit" class="save-profile-btn" id="submitOrderBtn">Place Print Order</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Order Status & Tracking Drawer (SCRUM-53) -->
+    <div id="orderDrawer" class="order-drawer">
+        <div class="order-drawer-backdrop" id="closeDrawerBackdrop"></div>
+        <div class="order-drawer-content">
+            <header class="order-drawer-header">
+                <div>
+                    <span class="eyebrow" id="drawerEyebrow">Active Print Request</span>
+                    <h3 id="drawerRefId">TXN-00000</h3>
+                </div>
+                <button type="button" class="drawer-close-btn" id="closeDrawerBtn" aria-label="Close details">✕</button>
+            </header>
+
+            <div class="order-drawer-scroll-area">
+                <!-- 1. Visual Progress Stepper -->
+                <section class="drawer-section">
+                    <h4 class="section-title">Job Tracking Status</h4>
+                    <div class="progress-stepper">
+                        <div class="step-node" id="stepSubmitted">
+                            <div class="step-circle">✓</div>
+                            <div class="step-details">
+                                <span class="step-title">Submitted</span>
+                                <span class="step-desc" id="timeSubmitted">Received by printer system</span>
+                            </div>
+                        </div>
+                        <div class="step-node" id="stepQueue">
+                            <div class="step-circle">2</div>
+                            <div class="step-details">
+                                <span class="step-title">In Terminal Queue</span>
+                                <span class="step-desc">Awaiting terminal release</span>
+                            </div>
+                        </div>
+                        <div class="step-node" id="stepPrinting">
+                            <div class="step-circle">3</div>
+                            <div class="step-details">
+                                <span class="step-title">Printing</span>
+                                <span class="step-desc">Paper handling in progress</span>
+                            </div>
+                        </div>
+                        <div class="step-node" id="stepCompleted">
+                            <div class="step-circle">✓</div>
+                            <div class="step-details">
+                                <span class="step-title">Ready for Pickup</span>
+                                <span class="step-desc" id="timeCompleted">Collect your document</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. Secure QR code release -->
+                <section class="drawer-section qr-section" id="drawerQrSection">
+                    <h4 class="section-title">Terminal Pickup QR Code</h4>
+                    <p class="section-desc">Scan this code at the physical terminal to release your document securely.</p>
+                    <div class="qr-code-wrapper">
+                        <div class="qr-mock-code">
+                            <div class="qr-corner qr-tl"></div>
+                            <div class="qr-corner qr-tr"></div>
+                            <div class="qr-corner qr-bl"></div>
+                            <div class="qr-grid-pattern">
+                                <div class="qr-dot d1"></div>
+                                <div class="qr-dot d2"></div>
+                                <div class="qr-dot d3"></div>
+                                <div class="qr-dot d4"></div>
+                                <div class="qr-dot d5"></div>
+                                <div class="qr-dot d6"></div>
+                                <div class="qr-dot d7"></div>
+                            </div>
+                        </div>
+                        <span class="qr-auth-token" id="qrAuthToken">PRINT-SEC-99120</span>
+                    </div>
+                </section>
+
+                <!-- 3. Document details -->
+                <section class="drawer-section">
+                    <h4 class="section-title">Document Metadata</h4>
+                    <div class="details-grid-card">
+                        <div class="details-row">
+                            <span class="detail-label">File Name:</span>
+                            <strong class="detail-value" id="drawerFileName">Lab_Report.pdf</strong>
+                        </div>
+                        <div class="details-row">
+                            <span class="detail-label">Printer Terminal:</span>
+                            <span class="detail-value" id="drawerTerminal">Central Library - T1</span>
+                        </div>
+                        <div class="details-row">
+                            <span class="detail-label">Color Mode:</span>
+                            <span class="detail-value" id="drawerColor">Black & White</span>
+                        </div>
+                        <div class="details-row">
+                            <span class="detail-label">Layout:</span>
+                            <span class="detail-value" id="drawerDuplex">Double-Sided</span>
+                        </div>
+                        <div class="details-row">
+                            <span class="detail-label">Paper Details:</span>
+                            <span class="detail-value" id="drawerPaper">A4 (Portrait)</span>
+                        </div>
+                        <div class="details-row">
+                            <span class="detail-label">Pages Subset:</span>
+                            <span class="detail-value" id="drawerPagesRange">All (12 pages)</span>
+                        </div>
+                        <div class="details-row">
+                            <span class="detail-label">Copies:</span>
+                            <span class="detail-value" id="drawerCopies">1 copy</span>
+                        </div>
+                        <div class="details-row highlight">
+                            <span class="detail-label">Payment Cost:</span>
+                            <strong class="detail-value" id="drawerCost">৳ 24.00</strong>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <footer class="order-drawer-footer">
+                <button type="button" class="cancel-job-btn" id="cancelPrintJobBtn">Cancel Print Job</button>
+                <div class="support-link-wrapper">
+                    <span>Having trouble?</span>
+                    <a href="#" class="support-link">Report terminal issue</a>
+                </div>
+            </footer>
         </div>
     </div>
 

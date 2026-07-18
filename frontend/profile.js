@@ -105,6 +105,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Expose sync function globally so script.js can update the UI
+    window.syncProfileDisplay = renderStudentData;
+
     if (currentPage === 'dashboard') {
         const currentStudent = JSON.parse(localStorage.getItem('currentStudent') || 'null');
 

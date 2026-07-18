@@ -113,12 +113,33 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('currentStudent', JSON.stringify(body.student));
             showMessage('Login successful. Redirecting...', 'success');
             setTimeout(() => {
-                window.location.href = 'dashboard.html';
+                if (body.role === 'Admin') {
+                    window.location.href = 'admin.html';
+                } else {
+                    window.location.href = 'dashboard.html';
+                }
             }, 700);
         })
         .catch(err => {
             // Local fallback if API is offline
             console.warn('API offline. Toggling local authentication fallback.', err);
+            
+            // Check offline admin login
+            if ((email.toLowerCase() === 'admin' || email.toLowerCase() === 'admin@campusprint.com') && password === 'admin123') {
+                localStorage.setItem('token', 'mock-jwt-admin-token-xyz');
+                localStorage.setItem('currentStudent', JSON.stringify({
+                    fullName: 'Admin Office',
+                    rollId: 'admin',
+                    email: 'admin@campusprint.com',
+                    role: 'Admin'
+                }));
+                showMessage('Login successful (Offline Admin).', 'success');
+                setTimeout(() => {
+                    window.location.href = 'admin.html';
+                }, 700);
+                return;
+            }
+
             const registeredStudent = JSON.parse(localStorage.getItem('registeredStudent') || 'null');
             if (registeredStudent && 
                 (registeredStudent.email === email.toLowerCase() || registeredStudent.rollId === email) && 
@@ -556,7 +577,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
 
                     card.querySelector('.print-file-btn').addEventListener('click', () => {
-                        alert(`Configuring printing parameters for: ${doc.fileName}\n(Directing to Print Order parameters...)`);
+                        openPrintOrderModal(doc.id);
                     });
 
                     grid.appendChild(card);
@@ -567,60 +588,284 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         };
 
+        // Unified table population helper with click-to-track tracking listeners (SCRUM-53)
+        const populateTable = (tbody, items) => {
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            items.forEach(order => {
+                const date = new Date(order.createdAt || Date.now()).toLocaleDateString('en-GB', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric'
+                });
+
+                const copiesStr = order.copies > 1 ? ` (${order.copies} copies)` : '';
+                const costDisplay = order.paymentMethod === 'Quota' ? 'Quota' : `৳ ${order.estimatedCost}`;
+                
+                const status = order.status || 'Pending';
+                let badgeClass = 'processing';
+                if (status.toLowerCase() === 'completed' || status.toLowerCase() === 'ready for pickup') {
+                    badgeClass = 'completed';
+                } else if (status.toLowerCase() === 'cancelled') {
+                    badgeClass = 'cancelled';
+                }
+
+                const tr = document.createElement('tr');
+                tr.style.cursor = 'pointer';
+                tr.innerHTML = `
+                    <td>
+                        <div>
+                            <strong style="display: block;">${order.documentName}</strong>
+                            <small style="color: var(--muted); font-size: 0.76rem;">${order.colorMode} • ${order.duplex} • ${order.paperSize}${copiesStr}</small>
+                        </div>
+                    </td>
+                    <td>${date}</td>
+                    <td>${order.pages * order.copies}</td>
+                    <td>${costDisplay}</td>
+                    <td><span class="status-badge ${badgeClass}">${status}</span></td>
+                `;
+                
+                tr.addEventListener('click', () => openOrderDrawer(order));
+                tbody.appendChild(tr);
+            });
+        };
+
+        // ── Order Status Drawer & Tracking (SCRUM-53) ──
+        const orderDrawer = document.getElementById('orderDrawer');
+        const closeDrawerBackdrop = document.getElementById('closeDrawerBackdrop');
+        const closeDrawerBtn = document.getElementById('closeDrawerBtn');
+        const cancelPrintJobBtn = document.getElementById('cancelPrintJobBtn');
+
+        let selectedTrackingOrder = null;
+
+        const openOrderDrawer = (order) => {
+            if (!orderDrawer || !order) return;
+            selectedTrackingOrder = order;
+
+            const drawerEyebrow = document.getElementById('drawerEyebrow');
+            const drawerRefId = document.getElementById('drawerRefId');
+            const drawerFileName = document.getElementById('drawerFileName');
+            const drawerTerminal = document.getElementById('drawerTerminal');
+            const drawerColor = document.getElementById('drawerColor');
+            const drawerDuplex = document.getElementById('drawerDuplex');
+            const drawerPaper = document.getElementById('drawerPaper');
+            const drawerPagesRange = document.getElementById('drawerPagesRange');
+            const drawerCopies = document.getElementById('drawerCopies');
+            const drawerCost = document.getElementById('drawerCost');
+            const qrAuthToken = document.getElementById('qrAuthToken');
+
+            if (drawerEyebrow) {
+                const isCompleted = order.status.toLowerCase() === 'completed' || order.status.toLowerCase() === 'ready for pickup';
+                const isCancelled = order.status.toLowerCase() === 'cancelled';
+                drawerEyebrow.textContent = isCompleted ? 'Completed Print Request' : (isCancelled ? 'Cancelled Print Request' : 'Active Print Request');
+            }
+            if (drawerRefId) drawerRefId.textContent = order.referenceId || 'TXN-' + Math.floor(10000 + Math.random() * 90000);
+            if (drawerFileName) drawerFileName.textContent = order.documentName;
+            if (drawerTerminal) drawerTerminal.textContent = order.printerTerminal;
+            if (drawerColor) drawerColor.textContent = order.colorMode;
+            if (drawerDuplex) drawerDuplex.textContent = order.duplex;
+            if (drawerPaper) drawerPaper.textContent = `${order.paperSize || 'A4'} (${order.orientation || 'Portrait'})`;
+            if (drawerPagesRange) drawerPagesRange.textContent = `${order.pageRange || 'All'} (${order.pages || 10} pages)`;
+            if (drawerCopies) drawerCopies.textContent = `${order.copies} cop${order.copies > 1 ? 'ies' : 'y'}`;
+            if (drawerCost) {
+                drawerCost.textContent = order.paymentMethod === 'Quota' ? 'Quota' : `৳ ${order.estimatedCost}`;
+            }
+            
+            if (qrAuthToken) {
+                qrAuthToken.textContent = `PRINT-SEC-${order.referenceId ? order.referenceId.split('-')[1] : Math.floor(10000 + Math.random() * 90000)}`;
+            }
+
+            const status = (order.status || 'Pending').toLowerCase();
+            const stepSubmitted = document.getElementById('stepSubmitted');
+            const stepQueue = document.getElementById('stepQueue');
+            const stepPrinting = document.getElementById('stepPrinting');
+            const stepCompleted = document.getElementById('stepCompleted');
+            const drawerQrSection = document.getElementById('drawerQrSection');
+
+            [stepSubmitted, stepQueue, stepPrinting, stepCompleted].forEach(node => {
+                if (node) node.className = 'step-node';
+            });
+            if (drawerQrSection) drawerQrSection.style.display = 'block';
+
+            if (status === 'cancelled') {
+                if (stepSubmitted) stepSubmitted.className = 'step-node cancelled';
+                const stepTitle = stepSubmitted?.querySelector('.step-title');
+                if (stepTitle) stepTitle.textContent = 'Cancelled';
+                const stepDesc = stepSubmitted?.querySelector('.step-desc');
+                if (stepDesc) stepDesc.textContent = 'Print job cancelled by student';
+
+                if (stepQueue) stepQueue.style.display = 'none';
+                if (stepPrinting) stepPrinting.style.display = 'none';
+                if (stepCompleted) stepCompleted.style.display = 'none';
+                if (drawerQrSection) drawerQrSection.style.display = 'none';
+            } else {
+                if (stepQueue) stepQueue.style.display = 'flex';
+                if (stepPrinting) stepPrinting.style.display = 'flex';
+                if (stepCompleted) stepCompleted.style.display = 'flex';
+                const stepTitle = stepSubmitted?.querySelector('.step-title');
+                if (stepTitle) stepTitle.textContent = 'Submitted';
+                const stepDesc = stepSubmitted?.querySelector('.step-desc');
+                if (stepDesc) stepDesc.textContent = 'Received by printer system';
+
+                if (status === 'pending' || status === 'submitted') {
+                    if (stepSubmitted) stepSubmitted.className = 'step-node active';
+                } else if (status === 'processing' || status === 'in queue') {
+                    if (stepSubmitted) stepSubmitted.className = 'step-node completed';
+                    if (stepQueue) stepQueue.className = 'step-node active';
+                } else if (status === 'printing') {
+                    if (stepSubmitted) stepSubmitted.className = 'step-node completed';
+                    if (stepQueue) stepQueue.className = 'step-node completed';
+                    if (stepPrinting) stepPrinting.className = 'step-node active';
+                } else if (status === 'completed' || status === 'ready for pickup') {
+                    if (stepSubmitted) stepSubmitted.className = 'step-node completed';
+                    if (stepQueue) stepQueue.className = 'step-node completed';
+                    if (stepPrinting) stepPrinting.className = 'step-node completed';
+                    if (stepCompleted) stepCompleted.className = 'step-node completed';
+                }
+            }
+
+            if (cancelPrintJobBtn) {
+                cancelPrintJobBtn.disabled = (status !== 'pending' && status !== 'submitted');
+            }
+
+            orderDrawer?.classList.add('open');
+        };
+
+        const closeOrderDrawer = () => {
+            orderDrawer?.classList.remove('open');
+            selectedTrackingOrder = null;
+        };
+
+        closeDrawerBtn?.addEventListener('click', closeOrderDrawer);
+        closeDrawerBackdrop?.addEventListener('click', closeOrderDrawer);
+
+        cancelPrintJobBtn?.addEventListener('click', () => {
+            if (!selectedTrackingOrder) return;
+            
+            const isConfirmed = confirm('Are you sure you want to cancel this print request? Quota pages or wallet funds will be fully refunded.');
+            if (!isConfirmed) return;
+
+            const orderId = selectedTrackingOrder.id;
+
+            fetch(`/api/print-orders/${orderId}/cancel`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(res => {
+                if (!res.ok) return res.json().then(j => { throw new Error(j.error || 'Server error') });
+                return res.json();
+            })
+            .then(data => {
+                localStorage.setItem('currentStudent', JSON.stringify(data.student));
+                if (window.syncProfileDisplay) {
+                    window.syncProfileDisplay(data.student);
+                } else if (typeof renderStudentData === 'function') {
+                    renderStudentData(data.student);
+                }
+
+                alert('Print request cancelled successfully and resources refunded.');
+                closeOrderDrawer();
+                refreshRecentActivitiesTable();
+                refreshTransactionsTable();
+                renderDocumentLibrary();
+            })
+            .catch(err => {
+                console.warn('API cancel print job failed, running local fallback...', err);
+                
+                const localOrders = JSON.parse(localStorage.getItem('printOrders') || '[]');
+                const idx = localOrders.findIndex(o => o.id === orderId);
+                if (idx !== -1) {
+                    const order = localOrders[idx];
+                    if (order.status !== 'Pending' && order.status !== 'Submitted') {
+                        alert('Only pending orders can be cancelled.');
+                        return;
+                    }
+                    order.status = 'Cancelled';
+                    localStorage.setItem('printOrders', JSON.stringify(localOrders));
+
+                    const student = JSON.parse(localStorage.getItem('currentStudent') || 'null');
+                    if (student) {
+                        const refundPages = order.pages * order.copies;
+                        const refundCost = order.estimatedCost;
+
+                        if (order.paymentMethod === 'Quota') {
+                            student.usedPages = Math.max((student.usedPages || 50) - refundPages, 0);
+                        } else {
+                            student.walletBalance = (student.walletBalance || 1250) + refundCost;
+                        }
+                        localStorage.setItem('currentStudent', JSON.stringify(student));
+                        if (typeof renderStudentData === 'function') {
+                            renderStudentData(student);
+                        }
+                    }
+
+                    const refundTxn = {
+                        id: 'txn_' + Date.now(),
+                        referenceId: 'TXN-' + Math.floor(10000 + Math.random() * 90000),
+                        type: order.paymentMethod === 'Quota' ? 'Print Quota Refund' : 'Print Wallet Refund',
+                        amount: order.paymentMethod === 'Quota' ? 0 : order.estimatedCost,
+                        status: 'Success',
+                        createdAt: new Date().toISOString()
+                    };
+                    const localTxns = JSON.parse(localStorage.getItem('transactions') || '[]');
+                    localTxns.unshift(refundTxn);
+                    localStorage.setItem('transactions', JSON.stringify(localTxns));
+
+                    alert('Print request cancelled successfully and resources refunded (Offline fallback).');
+                    closeOrderDrawer();
+                    refreshRecentActivitiesTable();
+                    refreshTransactionsTable();
+                    renderDocumentLibrary();
+                }
+            });
+        });
+
         const refreshRecentActivitiesTable = () => {
-            fetch('/api/documents', {
+            fetch('/api/print-orders', {
                 method: 'GET',
                 headers: { 'Authorization': `Bearer ${token}` }
             })
             .then(res => res.ok ? res.json() : [])
-            .then(docs => {
-                const localDocs = JSON.parse(localStorage.getItem('uploadedDocuments') || '[]');
+            .then(orders => {
+                const localOrders = JSON.parse(localStorage.getItem('printOrders') || '[]');
                 
-                const docMap = new Map();
-                localDocs.forEach(d => docMap.set(d.fileName + '_' + d.fileSize, d));
-                docs.forEach(d => docMap.set(d.fileName + '_' + d.fileSize, d));
+                const orderMap = new Map();
+                localOrders.forEach(o => orderMap.set(o.id || o.createdAt, o));
+                orders.forEach(o => orderMap.set(o.id || o.createdAt, o));
                 
-                const mergedDocs = Array.from(docMap.values()).sort((a, b) => {
-                    return new Date(b.uploadedAt) - new Date(a.uploadedAt);
+                const mergedOrders = Array.from(orderMap.values()).sort((a, b) => {
+                    return new Date(b.createdAt) - new Date(a.createdAt);
                 });
 
+                cachedPrintOrders = mergedOrders; // Cache for history filters
+
                 const dashboardTbody = document.querySelector('#dashboard-view .table-wrapper table tbody');
-                const historyTbody = document.querySelector('#history-view .table-wrapper table tbody');
-
-                const populateTable = (tbody, items) => {
-                    if (!tbody) return;
-                    tbody.innerHTML = '';
-                    items.forEach(doc => {
-                        const date = new Date(doc.uploadedAt || Date.now()).toLocaleDateString('en-GB', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric'
-                        });
-                        const pages = Math.floor(Math.random() * 20) + 5;
-                        const cost = pages * 3;
-
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td>${doc.fileName}</td>
-                            <td>${date}</td>
-                            <td>${pages}</td>
-                            <td>৳ ${cost}</td>
-                            <td><span class="status-badge processing">${doc.status || 'Ready to Print'}</span></td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
-                };
-
-                if (mergedDocs.length > 0) {
-                    populateTable(dashboardTbody, mergedDocs);
-                    populateTable(historyTbody, mergedDocs);
+                if (mergedOrders.length > 0) {
+                    populateTable(dashboardTbody, mergedOrders);
                 } else {
-                    const emptyRow = `<tr><td colspan="5" style="text-align: center; color: var(--muted); padding: 24px;">No activities recorded. Upload a document to start!</td></tr>`;
+                    const emptyRow = `<tr><td colspan="5" style="text-align: center; color: var(--muted); padding: 24px;">No print orders placed yet. Upload files and click Print Now to start!</td></tr>`;
                     if (dashboardTbody) dashboardTbody.innerHTML = emptyRow;
-                    if (historyTbody) historyTbody.innerHTML = emptyRow;
                 }
+                
+                // Populate history view and update statistics
+                renderFilteredHistory();
             })
-            .catch(err => console.error('Error loading history:', err));
+            .catch(err => {
+                console.warn('API error loading print orders queue, using local fallback...', err);
+                const localOrders = JSON.parse(localStorage.getItem('printOrders') || '[]');
+                cachedPrintOrders = localOrders; // Cache fallback
+
+                const dashboardTbody = document.querySelector('#dashboard-view .table-wrapper table tbody');
+                if (localOrders.length > 0) {
+                    populateTable(dashboardTbody, localOrders);
+                } else {
+                    const emptyRow = `<tr><td colspan="5" style="text-align: center; color: var(--muted); padding: 24px;">No print orders placed yet. Upload files and click Print Now to start!</td></tr>`;
+                    if (dashboardTbody) dashboardTbody.innerHTML = emptyRow;
+                }
+                
+                // Populate history view and update statistics
+                renderFilteredHistory();
+            });
         };
 
         // Wire existing delete buttons
@@ -631,8 +876,820 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Initialize table & library rendering
+        // ── Print Order Modal Logic (SCRUM-44) ──
+        const printOrderModal = document.getElementById('printOrderModal');
+        const printOrderForm = document.getElementById('printOrderForm');
+        const printDocSelect = document.getElementById('printDocSelect');
+        const printCopies = document.getElementById('printCopies');
+        const printPaperSize = document.getElementById('printPaperSize');
+        const printOrientation = document.getElementById('printOrientation');
+        const printPageRange = document.getElementById('printPageRange');
+        const printTerminal = document.getElementById('printTerminal');
+        const colorModeBW = document.getElementById('colorModeBW');
+        const colorModeColor = document.getElementById('colorModeColor');
+        const duplexSingle = document.getElementById('duplexSingle');
+        const duplexDouble = document.getElementById('duplexDouble');
+
+        const summaryDocPages = document.getElementById('summaryDocPages');
+        const summaryTotalPages = document.getElementById('summaryTotalPages');
+        const summaryUnitCost = document.getElementById('summaryUnitCost');
+        const summaryTotalCost = document.getElementById('summaryTotalCost');
+
+        const paymentMethodQuota = document.getElementById('paymentMethodQuota');
+        const paymentMethodWallet = document.getElementById('paymentMethodWallet');
+        const quotaLimitLabel = document.getElementById('quotaLimitLabel');
+        const walletBalanceLabel = document.getElementById('walletBalanceLabel');
+        const paymentOptionQuotaCard = document.getElementById('paymentOptionQuotaCard');
+        const paymentOptionWalletCard = document.getElementById('paymentOptionWalletCard');
+
+        const printValidationWarning = document.getElementById('printValidationWarning');
+        const submitOrderBtn = document.getElementById('submitOrderBtn');
+        const closePrintModalBtn = document.getElementById('closePrintModalBtn');
+        const cancelPrintBtn = document.getElementById('cancelPrintBtn');
+
+        let allDocumentsList = [];
+        let selectedDocObj = null;
+
+        // Fetch documents to populate select list
+        const loadDocDropdown = (selectedDocId = null) => {
+            fetch('/api/documents', {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(res => res.ok ? res.json() : [])
+            .then(docs => {
+                const localDocs = JSON.parse(localStorage.getItem('uploadedDocuments') || '[]');
+                const docMap = new Map();
+                localDocs.forEach(d => docMap.set(d.id, d));
+                docs.forEach(d => docMap.set(d.id, d));
+                allDocumentsList = Array.from(docMap.values());
+
+                if (printDocSelect) {
+                    printDocSelect.innerHTML = '';
+                    if (allDocumentsList.length === 0) {
+                        printDocSelect.innerHTML = '<option value="">-- No documents uploaded yet 📂 --</option>';
+                        selectedDocObj = null;
+                        updateCostEstimate();
+                        return;
+                    }
+                    
+                    allDocumentsList.forEach(doc => {
+                        const opt = document.createElement('option');
+                        opt.value = doc.id;
+                        opt.textContent = `${doc.fileName} (${doc.pages || 10} pages)`;
+                        if (String(doc.id) === String(selectedDocId)) {
+                            opt.selected = true;
+                        }
+                        printDocSelect.appendChild(opt);
+                    });
+
+                    const selectedId = printDocSelect.value;
+                    selectedDocObj = allDocumentsList.find(d => String(d.id) === String(selectedId));
+                    updateCostEstimate();
+                }
+            })
+            .catch(err => {
+                console.warn('API error loading documents dropdown, using local fallback...', err);
+                const localDocs = JSON.parse(localStorage.getItem('uploadedDocuments') || '[]');
+                allDocumentsList = localDocs;
+                if (printDocSelect) {
+                    printDocSelect.innerHTML = '';
+                    if (allDocumentsList.length === 0) {
+                        printDocSelect.innerHTML = '<option value="">-- No documents uploaded yet 📂 --</option>';
+                        selectedDocObj = null;
+                        updateCostEstimate();
+                        return;
+                    }
+                    allDocumentsList.forEach(doc => {
+                        const opt = document.createElement('option');
+                        opt.value = doc.id;
+                        opt.textContent = `${doc.fileName} (${doc.pages || 10} pages)`;
+                        if (String(doc.id) === String(selectedDocId)) {
+                            opt.selected = true;
+                        }
+                        printDocSelect.appendChild(opt);
+                    });
+                    const selectedId = printDocSelect.value;
+                    selectedDocObj = allDocumentsList.find(d => String(d.id) === String(selectedId));
+                    updateCostEstimate();
+                }
+            });
+        };
+
+        // Open modal helpers
+        const openPrintOrderModal = (documentId = null) => {
+            loadDocDropdown(documentId);
+            
+            // Load and apply default print settings (SCRUM-48 / SCRUM-49)
+            const savedSettings = JSON.parse(localStorage.getItem('printSettings') || 'null');
+            if (savedSettings) {
+                const { defaultPref, defaultTerminal } = savedSettings;
+                if (defaultPref) {
+                    if (defaultPref === 'duplex_bw') {
+                        colorModeBW.checked = true;
+                        duplexDouble.checked = true;
+                    } else if (defaultPref === 'simplex_bw') {
+                        colorModeBW.checked = true;
+                        duplexSingle.checked = true;
+                    } else if (defaultPref === 'duplex_color') {
+                        colorModeColor.checked = true;
+                        duplexDouble.checked = true;
+                    } else if (defaultPref === 'simplex_color') {
+                        colorModeColor.checked = true;
+                        duplexSingle.checked = true;
+                    }
+                }
+                if (defaultTerminal && printTerminal) {
+                    printTerminal.value = defaultTerminal;
+                }
+            }
+
+            // Sync payment radio button active card highlights
+            if (paymentMethodQuota.checked) {
+                paymentOptionQuotaCard?.classList.add('active');
+                paymentOptionWalletCard?.classList.remove('active');
+            } else {
+                paymentOptionQuotaCard?.classList.remove('active');
+                paymentOptionWalletCard?.classList.add('active');
+            }
+
+            printOrderModal?.classList.add('open');
+        };
+
+        const closePrintModal = () => {
+            printOrderModal?.classList.remove('open');
+        };
+
+        closePrintModalBtn?.addEventListener('click', closePrintModal);
+        cancelPrintBtn?.addEventListener('click', closePrintModal);
+        printOrderModal?.addEventListener('click', (e) => {
+            if (e.target === printOrderModal) closePrintModal();
+        });
+
+        // Trigger on selecting another document in dropdown
+        printDocSelect?.addEventListener('change', () => {
+            const selectedId = printDocSelect.value;
+            selectedDocObj = allDocumentsList.find(d => String(d.id) === String(selectedId));
+            updateCostEstimate();
+        });
+
+        // Helper to parse page range (SCRUM-50)
+        const parsePageRangeCount = (rangeStr, docPages) => {
+            const clean = rangeStr.trim().toLowerCase();
+            if (!clean || clean === 'all') return docPages;
+            
+            let total = 0;
+            const parts = clean.split(',');
+            for (let part of parts) {
+                part = part.trim();
+                if (!part) continue;
+                
+                const rangeMatch = part.match(/^(\d+)-(\d+)$/);
+                if (rangeMatch) {
+                    const start = parseInt(rangeMatch[1]);
+                    const end = parseInt(rangeMatch[2]);
+                    if (start > 0 && end >= start && start <= docPages && end <= docPages) {
+                        total += (end - start + 1);
+                    } else {
+                        return -1;
+                    }
+                } else if (/^\d+$/.test(part)) {
+                    const single = parseInt(part);
+                    if (single > 0 && single <= docPages) {
+                        total += 1;
+                    } else {
+                        return -1;
+                    }
+                } else {
+                    return -1;
+                }
+            }
+            return total > 0 ? total : -1;
+        };
+
+        // Update summary and cost estimation
+        const updateCostEstimate = () => {
+            if (!selectedDocObj) {
+                summaryDocPages.textContent = '-- pages';
+                summaryTotalPages.textContent = '-- pages';
+                summaryTotalCost.textContent = '৳ 0.00';
+                submitOrderBtn.disabled = true;
+                return;
+            }
+
+            const docPages = selectedDocObj.pages || 10;
+            let copies = parseInt(printCopies.value);
+            if (isNaN(copies) || copies < 1) {
+                copies = 1;
+            } else if (copies > 99) {
+                copies = 99;
+                printCopies.value = 99;
+            }
+            const isColor = colorModeColor.checked;
+            const isDuplex = duplexDouble.checked;
+
+            // Page calculation factoring range (SCRUM-50)
+            const rangeVal = printPageRange.value.trim();
+            const printPages = parsePageRangeCount(rangeVal, docPages);
+
+            if (printPages === -1) {
+                summaryDocPages.textContent = `${docPages} page${docPages !== 1 ? 's' : ''}`;
+                summaryTotalPages.textContent = 'Invalid';
+                summaryTotalCost.textContent = '৳ 0.00';
+                const summaryFormula = document.getElementById('summaryFormula');
+                if (summaryFormula) summaryFormula.textContent = '';
+                
+                printValidationWarning.textContent = `⚠️ Invalid page range selection. Use formats like 'All', '5', '1-5', or '1-3, 5, 8-10'. Make sure pages are within 1 to ${docPages}.`;
+                printValidationWarning.style.display = 'block';
+                submitOrderBtn.disabled = true;
+                return;
+            }
+
+            const totalPagesToPrint = printPages * copies;
+
+            // Unit pricing
+            let unitCost = 2.0; // B&W Simplex
+            if (isColor) {
+                unitCost = isDuplex ? 4.0 : 5.0;
+            } else {
+                unitCost = isDuplex ? 1.5 : 2.0;
+            }
+
+            // Paper size pricing adjustment (SCRUM-47)
+            if (printPaperSize && printPaperSize.value === 'Legal') {
+                unitCost += 1.0;
+            }
+
+            const estTotalCost = totalPagesToPrint * unitCost;
+
+            // Update DOM fields
+            summaryDocPages.textContent = `${docPages} page${docPages !== 1 ? 's' : ''}`;
+            summaryTotalPages.textContent = `${totalPagesToPrint} page${totalPagesToPrint !== 1 ? 's' : ''}`;
+            summaryUnitCost.textContent = `৳ ${unitCost.toFixed(2)} / page`;
+            summaryTotalCost.textContent = `৳ ${estTotalCost.toFixed(2)}`;
+
+            const summaryFormula = document.getElementById('summaryFormula');
+            if (summaryFormula) {
+                summaryFormula.textContent = `(${printPages} pgs × ${copies} cop) × ৳${unitCost.toFixed(2)}`;
+            }
+
+            // ── Update Print Preview Visualizer (SCRUM-45) ──
+            const previewPaper = document.getElementById('previewPaper');
+            const previewPaperBack = document.getElementById('previewPaperBack');
+            const previewPageIndicator = document.getElementById('previewPageIndicator');
+            const previewColorIndicator = document.getElementById('previewColorIndicator');
+            const previewCopiesBadge = document.getElementById('previewCopiesBadge');
+
+            if (previewPaper) {
+                // Determine base size of paper according to paper size (SCRUM-47)
+                let baseWidth = 80;
+                let baseHeight = 110;
+                if (printPaperSize && printPaperSize.value === 'Letter') {
+                    baseWidth = 84;
+                    baseHeight = 106;
+                } else if (printPaperSize && printPaperSize.value === 'Legal') {
+                    baseWidth = 76;
+                    baseHeight = 120;
+                }
+
+                // Orientation rotation
+                if (printOrientation && printOrientation.value === 'Landscape') {
+                    previewPaper.style.width = `${baseHeight}px`;
+                    previewPaper.style.height = `${baseWidth}px`;
+                } else {
+                    previewPaper.style.width = `${baseWidth}px`;
+                    previewPaper.style.height = `${baseHeight}px`;
+                }
+
+                // Duplex backing sheet toggle
+                if (previewPaperBack) {
+                    previewPaperBack.style.display = isDuplex ? 'block' : 'none';
+                }
+
+                // Copies badge text
+                if (previewCopiesBadge) {
+                    previewCopiesBadge.textContent = `${copies} cop${copies > 1 ? 'ies' : 'y'}`;
+                }
+
+                // Page indicators
+                if (previewPageIndicator) {
+                    previewPageIndicator.textContent = `1/${printPages}`;
+                }
+
+                // Color lines & indicator toggle
+                const headerLine = previewPaper.querySelector('.preview-line.header');
+                const detailLines = previewPaper.querySelectorAll('.preview-line:not(.header)');
+                
+                if (isColor) {
+                    if (previewColorIndicator) {
+                        previewColorIndicator.style.background = 'linear-gradient(135deg, #3b82f6, #ec4899)';
+                    }
+                    if (headerLine) headerLine.style.background = '#2563eb';
+                    detailLines.forEach((line, idx) => {
+                        line.style.background = idx % 2 === 0 ? '#60a5fa' : '#f472b6';
+                    });
+                } else {
+                    if (previewColorIndicator) {
+                        previewColorIndicator.style.background = '#94a3b8';
+                    }
+                    if (headerLine) headerLine.style.background = '#64748b';
+                    detailLines.forEach(line => {
+                        line.style.background = '#cbd5e1';
+                    });
+                }
+            }
+
+            // Sync user data for budget validations
+            const student = JSON.parse(localStorage.getItem('currentStudent') || 'null');
+            if (student) {
+                const walletBal = student.walletBalance || 0;
+                const quotaLeft = Math.max((student.totalPages || 100) - (student.usedPages || 50), 0);
+
+                quotaLimitLabel.textContent = `Left: ${quotaLeft} pages`;
+                walletBalanceLabel.textContent = `Bal: ৳ ${walletBal.toFixed(2)}`;
+
+                let validationPass = true;
+                if (paymentMethodQuota.checked) {
+                    if (quotaLeft < totalPagesToPrint) {
+                        validationPass = false;
+                        printValidationWarning.textContent = `⚠️ Insufficient print quota. You need ${totalPagesToPrint} free pages, but only have ${quotaLeft} left.`;
+                        printValidationWarning.style.display = 'block';
+                    } else {
+                        printValidationWarning.style.display = 'none';
+                    }
+                } else {
+                    if (walletBal < estTotalCost) {
+                        validationPass = false;
+                        printValidationWarning.textContent = `⚠️ Insufficient wallet balance. You need ৳ ${estTotalCost.toFixed(2)}, but only have ৳ ${walletBal.toFixed(2)}.`;
+                        printValidationWarning.style.display = 'block';
+                    } else {
+                        printValidationWarning.style.display = 'none';
+                    }
+                }
+
+                submitOrderBtn.disabled = !validationPass;
+            }
+        };
+
+        // Inputs triggering recalculation
+        [printCopies, printPageRange].forEach(input => {
+            input?.addEventListener('input', updateCostEstimate);
+        });
+
+        [printPaperSize, printOrientation, printTerminal].forEach(select => {
+            select?.addEventListener('change', updateCostEstimate);
+        });
+
+        [colorModeBW, colorModeColor, duplexSingle, duplexDouble, paymentMethodQuota, paymentMethodWallet].forEach(radio => {
+            radio?.addEventListener('change', (e) => {
+                // Style payment selection cards active states
+                if (paymentMethodQuota.checked) {
+                    paymentOptionQuotaCard?.classList.add('active');
+                    paymentOptionWalletCard?.classList.remove('active');
+                } else {
+                    paymentOptionQuotaCard?.classList.remove('active');
+                    paymentOptionWalletCard?.classList.add('active');
+                }
+                updateCostEstimate();
+            });
+        });
+
+        // ── Custom Copies Spinner click handlers (SCRUM-49) ──
+        const decCopiesBtn = document.getElementById('decCopiesBtn');
+        const incCopiesBtn = document.getElementById('incCopiesBtn');
+
+        decCopiesBtn?.addEventListener('click', () => {
+            let val = parseInt(printCopies.value) || 1;
+            if (val > 1) {
+                printCopies.value = val - 1;
+                updateCostEstimate();
+            }
+        });
+
+        incCopiesBtn?.addEventListener('click', () => {
+            let val = parseInt(printCopies.value) || 1;
+            if (val < 99) {
+                printCopies.value = val + 1;
+                updateCostEstimate();
+            }
+        });
+
+        // Submit Print Order handler
+        printOrderForm?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!selectedDocObj) return;
+
+            const docPages = selectedDocObj.pages || 10;
+            let copies = parseInt(printCopies.value);
+            if (isNaN(copies) || copies < 1 || copies > 99) {
+                alert('Please enter a valid number of copies between 1 and 99.');
+                return;
+            }
+            const isColor = colorModeColor.checked;
+            const isDuplex = duplexDouble.checked;
+            
+            const printPages = parsePageRangeCount(printPageRange.value, docPages);
+            if (printPages === -1) {
+                alert("Please enter a valid page range (e.g. 'All', '5', '1-5', or '1-3, 5, 8-10').");
+                return;
+            }
+
+            const totalPagesToPrint = printPages * copies;
+            let unitCost = isColor ? (isDuplex ? 4.0 : 5.0) : (isDuplex ? 1.5 : 2.0);
+            if (printPaperSize && printPaperSize.value === 'Legal') {
+                unitCost += 1.0;
+            }
+            const estTotalCost = totalPagesToPrint * unitCost;
+
+            const orderData = {
+                documentId: selectedDocObj.id,
+                documentName: selectedDocObj.fileName,
+                copies: copies,
+                colorMode: isColor ? 'Color' : 'Black & White',
+                duplex: isDuplex ? 'Double-Sided' : 'Single-Sided',
+                orientation: printOrientation.value,
+                paperSize: printPaperSize.value,
+                pageRange: printPageRange.value,
+                printerTerminal: printTerminal.value,
+                estimatedCost: estTotalCost,
+                pages: printPages,
+                paymentMethod: paymentMethodQuota.checked ? 'Quota' : 'Wallet'
+            };
+
+            fetch('/api/print-orders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(orderData)
+            })
+            .then(res => {
+                if (!res.ok) return res.json().then(j => { throw new Error(j.error || 'Server rejected order') });
+                return res.json();
+            })
+            .then(data => {
+                // Sync profile data and update displays
+                localStorage.setItem('currentStudent', JSON.stringify(data.student));
+                
+                // Sync globally in profile.js
+                if (window.syncProfileDisplay) {
+                    window.syncProfileDisplay(data.student);
+                } else if (typeof renderStudentData === 'function') {
+                    renderStudentData(data.student);
+                }
+
+                alert('Print job submitted successfully! Sent to terminal queue.');
+                closePrintModal();
+                refreshRecentActivitiesTable();
+                refreshTransactionsTable();
+                renderDocumentLibrary(); // Refresh doc library statuses
+            })
+            .catch(err => {
+                console.warn('API print order failed, running local fallback...', err);
+                
+                const student = JSON.parse(localStorage.getItem('currentStudent') || 'null');
+                if (!student) return;
+
+                // Local offline deduction
+                if (paymentMethodQuota.checked) {
+                    student.usedPages = (student.usedPages || 50) + totalPagesToPrint;
+                } else {
+                    student.walletBalance = (student.walletBalance || 1250) - estTotalCost;
+                }
+
+                localStorage.setItem('currentStudent', JSON.stringify(student));
+                if (typeof renderStudentData === 'function') {
+                    renderStudentData(student);
+                }
+
+                const localOrder = {
+                    id: 'ord_' + Date.now(),
+                    userId: student.id,
+                    documentName: orderData.documentName,
+                    copies: orderData.copies,
+                    colorMode: orderData.colorMode,
+                    duplex: orderData.duplex,
+                    orientation: orderData.orientation,
+                    paperSize: orderData.paperSize,
+                    pageRange: orderData.pageRange,
+                    printerTerminal: orderData.printerTerminal,
+                    estimatedCost: orderData.estimatedCost,
+                    pages: orderData.pages,
+                    paymentMethod: orderData.paymentMethod,
+                    status: 'Pending',
+                    createdAt: new Date().toISOString()
+                };
+
+                const localOrders = JSON.parse(localStorage.getItem('printOrders') || '[]');
+                localOrders.unshift(localOrder);
+                localStorage.setItem('printOrders', JSON.stringify(localOrders));
+
+                const localTxn = {
+                    id: 'txn_' + Date.now(),
+                    referenceId: 'TXN-' + Math.floor(10000 + Math.random() * 90000),
+                    type: orderData.paymentMethod === 'Quota' ? 'Print Quota Debit' : 'Print Wallet Debit',
+                    amount: orderData.paymentMethod === 'Quota' ? 0 : estTotalCost,
+                    status: 'Success',
+                    createdAt: new Date().toISOString()
+                };
+
+                const localTxns = JSON.parse(localStorage.getItem('transactions') || '[]');
+                localTxns.unshift(localTxn);
+                localStorage.setItem('transactions', JSON.stringify(localTxns));
+
+                alert('Print order submitted successfully (Offline mode).');
+                closePrintModal();
+                refreshRecentActivitiesTable();
+                refreshTransactionsTable();
+                renderDocumentLibrary();
+            });
+        });
+
+        // Topbar "＋ Create New Print" listener
+        const topbarCreateBtn = document.querySelector('.topbar-actions .create-btn');
+        topbarCreateBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            openPrintOrderModal();
+        });
+
+        // Sidebar "New Print Request" navigation adjustment or button
+        const submitPrintBtn = document.querySelector('.submit-print-btn');
+        submitPrintBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            openPrintOrderModal();
+        });
+
+        // ── Transactions Table Rendering ──
+        const refreshTransactionsTable = () => {
+            const tableBody = document.querySelector('#billing-view .table-wrapper table tbody');
+            if (!tableBody) return;
+
+            fetch('/api/transactions', {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(res => res.ok ? res.json() : [])
+            .then(txns => {
+                const localTxns = JSON.parse(localStorage.getItem('transactions') || '[]');
+                const txnMap = new Map();
+                localTxns.forEach(t => txnMap.set(t.referenceId, t));
+                txns.forEach(t => txnMap.set(t.referenceId, t));
+
+                const mergedTxns = Array.from(txnMap.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+                tableBody.innerHTML = '';
+                if (mergedTxns.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--muted); padding: 20px;">No transactions recorded.</td></tr>`;
+                    return;
+                }
+
+                mergedTxns.forEach(txn => {
+                    const dateStr = new Date(txn.createdAt).toLocaleDateString('en-GB', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                    });
+
+                    const isCredit = txn.type.toLowerCase().includes('credit') || txn.type.toLowerCase().includes('top-up');
+                    const amtStyle = isCredit ? 'color: var(--success); font-weight: 600;' : 'color: var(--danger); font-weight: 600;';
+                    const amtSign = isCredit ? '+' : '-';
+                    const amtLabel = txn.amount === 0 ? 'Quota' : `${amtSign} ৳ ${txn.amount}`;
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${txn.referenceId}</td>
+                        <td>${dateStr}</td>
+                        <td>${txn.type}</td>
+                        <td style="${amtStyle}">${amtLabel}</td>
+                        <td><span class="status-badge completed">${txn.status}</span></td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+            })
+            .catch(err => {
+                console.warn('API error loading transactions, using local fallback...', err);
+                const localTxns = JSON.parse(localStorage.getItem('transactions') || '[]');
+                tableBody.innerHTML = '';
+                if (localTxns.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--muted); padding: 20px;">No transactions recorded.</td></tr>`;
+                    return;
+                }
+                localTxns.forEach(txn => {
+                    const dateStr = new Date(txn.createdAt).toLocaleDateString('en-GB', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                    });
+                    const isCredit = txn.type.includes('Credit') || txn.type.includes('Top-up');
+                    const amtStyle = isCredit ? 'color: var(--success); font-weight: 600;' : 'color: var(--danger); font-weight: 600;';
+                    const amtSign = isCredit ? '+' : '-';
+                    const amtLabel = txn.amount === 0 ? 'Quota' : `${amtSign} ৳ ${txn.amount}`;
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${txn.referenceId}</td>
+                        <td>${dateStr}</td>
+                        <td>${txn.type}</td>
+                        <td style="${amtStyle}">${amtLabel}</td>
+                        <td><span class="status-badge completed">${txn.status}</span></td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+            });
+        };
+
+        // ── Top-up Wallet Logic ──
+        const topupWalletBtn = document.getElementById('topupWalletBtn');
+        topupWalletBtn?.addEventListener('click', () => {
+            const amtStr = prompt('Enter the amount in Taka to top up (e.g. 500):');
+            if (!amtStr) return;
+            const amt = parseFloat(amtStr);
+            if (isNaN(amt) || amt <= 0) {
+                alert('Please enter a valid positive number.');
+                return;
+            }
+
+            fetch('/api/wallet/topup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ amount: amt })
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('Top-up server error');
+                return res.json();
+            })
+            .then(data => {
+                localStorage.setItem('currentStudent', JSON.stringify(data.student));
+                if (typeof renderStudentData === 'function') {
+                    renderStudentData(data.student);
+                }
+                alert(`Successfully topped up ৳ ${amt}!`);
+                refreshTransactionsTable();
+            })
+            .catch(err => {
+                console.warn('API top-up failed, running local fallback...', err);
+                const student = JSON.parse(localStorage.getItem('currentStudent') || 'null');
+                if (student) {
+                    student.walletBalance = (student.walletBalance || 1250) + amt;
+                    localStorage.setItem('currentStudent', JSON.stringify(student));
+                    if (typeof renderStudentData === 'function') {
+                        renderStudentData(student);
+                    }
+
+                    const localTxn = {
+                        id: 'txn_' + Date.now(),
+                        referenceId: 'TXN-' + Math.floor(10000 + Math.random() * 90000),
+                        type: 'Wallet Top-up Credit',
+                        amount: amt,
+                        status: 'Success',
+                        createdAt: new Date().toISOString()
+                    };
+                    const localTxns = JSON.parse(localStorage.getItem('transactions') || '[]');
+                    localTxns.unshift(localTxn);
+                    localStorage.setItem('transactions', JSON.stringify(localTxns));
+
+                    alert(`Successfully topped up ৳ ${amt} (Offline fallback).`);
+                    refreshTransactionsTable();
+                }
+            });
+        });
+
+        // ── Settings Preferences Form Logic (SCRUM-48 / SCRUM-49) ──
+        const settingsForm = document.getElementById('settingsForm');
+        const defaultPrintPref = document.getElementById('defaultPrintPref');
+        const defaultPrinterTerminal = document.getElementById('defaultPrinterTerminal');
+        const checkNotify = document.getElementById('checkNotify');
+
+        // Load settings to populate settings fields on page load
+        const loadSettingsFields = () => {
+            const savedSettings = JSON.parse(localStorage.getItem('printSettings') || 'null');
+            if (savedSettings) {
+                const { defaultPref, defaultTerminal, notify } = savedSettings;
+                if (defaultPrintPref && defaultPref) {
+                    defaultPrintPref.value = defaultPref;
+                }
+                if (defaultPrinterTerminal && defaultTerminal) {
+                    defaultPrinterTerminal.value = defaultTerminal;
+                }
+                if (checkNotify) {
+                    checkNotify.checked = notify !== false;
+                }
+            }
+        };
+
+        settingsForm?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const defaultPref = defaultPrintPref?.value || 'duplex_bw';
+            const defaultTerminal = defaultPrinterTerminal?.value || 'Central Library - Terminal 1';
+            const notify = checkNotify ? checkNotify.checked : true;
+
+            const printSettings = { defaultPref, defaultTerminal, notify };
+            localStorage.setItem('printSettings', JSON.stringify(printSettings));
+            alert('Default printing preferences saved successfully!');
+        });
+
+        // ── Order History Search & Filters (SCRUM-54) ──
+        let cachedPrintOrders = [];
+
+        const renderFilteredHistory = () => {
+            const historyTbody = document.querySelector('#history-view .table-wrapper table tbody');
+            if (!historyTbody) return;
+
+            const searchQuery = (document.getElementById('orderSearchInput')?.value || '').trim().toLowerCase();
+            const filterStatus = document.getElementById('orderStatusFilter')?.value || '';
+            const filterPayment = document.getElementById('historyFilterPayment')?.value || '';
+
+            const filtered = cachedPrintOrders.filter(order => {
+                const nameMatch = order.documentName.toLowerCase().includes(searchQuery) ||
+                                  (order.referenceId && order.referenceId.toLowerCase().includes(searchQuery));
+                
+                let statusMatch = true;
+                if (filterStatus && filterStatus !== 'All') {
+                    statusMatch = (order.status || '').toLowerCase() === filterStatus.toLowerCase();
+                }
+
+                let paymentMatch = true;
+                if (filterPayment !== 'All') {
+                    paymentMatch = (order.paymentMethod || '').toLowerCase() === filterPayment.toLowerCase();
+                }
+
+                return nameMatch && statusMatch && paymentMatch;
+            });
+
+            // Calculate history summary metrics
+            let totalOrders = filtered.length;
+            let totalPages = 0;
+            let totalCost = 0;
+
+            filtered.forEach(order => {
+                totalPages += (order.pages * order.copies) || 0;
+                if (order.paymentMethod !== 'Quota') {
+                    totalCost += order.estimatedCost || 0;
+                }
+            });
+
+            const historyStatTotalOrders = document.getElementById('historyStatTotalOrders');
+            const historyStatTotalPages = document.getElementById('historyStatTotalPages');
+            const historyStatTotalCost = document.getElementById('historyStatTotalCost');
+
+            if (historyStatTotalOrders) historyStatTotalOrders.textContent = totalOrders;
+            if (historyStatTotalPages) historyStatTotalPages.textContent = `${totalPages} pgs`;
+            if (historyStatTotalCost) historyStatTotalCost.textContent = `৳ ${totalCost.toFixed(2)}`;
+
+            if (filtered.length > 0) {
+                populateTable(historyTbody, filtered);
+            } else {
+                historyTbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--muted); padding: 24px;">No matching print history found. Adjust search or filters!</td></tr>`;
+            }
+        };
+
+        // Setup filter input bindings
+        document.getElementById('orderSearchInput')?.addEventListener('input', renderFilteredHistory);
+        document.getElementById('orderStatusFilter')?.addEventListener('change', renderFilteredHistory);
+        document.getElementById('historyFilterPayment')?.addEventListener('change', renderFilteredHistory);
+
+        // CSV Exporter Action
+        document.getElementById('exportHistoryBtn')?.addEventListener('click', () => {
+            if (cachedPrintOrders.length === 0) {
+                alert('No print logs available to export.');
+                return;
+            }
+            
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Reference ID,Document Name,Date,Pages,Cost,Status,Payment Method,Terminal\r\n";
+            
+            cachedPrintOrders.forEach(order => {
+                const date = new Date(order.createdAt || Date.now()).toLocaleDateString('en-GB');
+                const row = [
+                    order.referenceId || '',
+                    `"${order.documentName.replace(/"/g, '""')}"`,
+                    date,
+                    order.pages * order.copies,
+                    order.paymentMethod === 'Quota' ? 'Quota' : `Tk ${order.estimatedCost}`,
+                    order.status || 'Pending',
+                    order.paymentMethod,
+                    order.printerTerminal
+                ].join(",");
+                csvContent += row + "\r\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "campus_print_history.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+
+        // Initialize table & library rendering, and load settings
+        loadSettingsFields();
         renderDocumentLibrary();
         refreshRecentActivitiesTable();
+        refreshTransactionsTable();
     }
 });

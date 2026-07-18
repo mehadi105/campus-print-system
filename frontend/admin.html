@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Print - Admin Workspace</title>
+    <link rel="stylesheet" href="dashboard.style.css">
+    <link rel="stylesheet" href="admin.style.css">
+</head>
+<body data-page="admin">
+    <div class="app-shell">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand-block">
+                <div class="brand-icon" style="background: #4f46e5; border-radius: 8px;">⚙️</div>
+                <div>
+                    <h1>Campus Print</h1>
+                    <p>Admin Workspace</p>
+                </div>
+            </div>
+
+            <nav class="nav-links" aria-label="Admin sidebar navigation">
+                <a class="nav-item active" href="#queue-view">
+                    <span class="nav-icon">📁</span>
+                    <span>Print Queue</span>
+                </a>
+                <a class="nav-item" href="#printers-view">
+                    <span class="nav-icon">🖨️</span>
+                    <span>Printers &amp; Terminals</span>
+                </a>
+                <a class="nav-item" href="#students-view">
+                    <span class="nav-icon">👥</span>
+                    <span>Student Accounts</span>
+                </a>
+                <a class="nav-item" href="#payments-view">
+                    <span class="nav-icon">💳</span>
+                    <span>Payment Ledger</span>
+                </a>
+                <a class="nav-item" href="#settings-view">
+                    <span class="nav-icon">🔧</span>
+                    <span>System Settings</span>
+                </a>
+            </nav>
+
+            <div class="profile-card" id="adminProfileCard" style="cursor: default;">
+                <div class="avatar" style="background: #4f46e5;">AD</div>
+                <div>
+                    <h3 id="admin-name-display">Admin Office</h3>
+                    <p>System Administrator</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-container">
+            <header class="topbar">
+                <div class="welcome-block">
+                    <h2>Admin Controller</h2>
+                    <p id="topbar-date">Saturday, 18 Jul 2026</p>
+                </div>
+                <div class="topbar-actions" style="display: flex; align-items: center; gap: 16px;">
+                    <div class="live-indicator" style="display: flex; align-items: center; gap: 6px; font-size: 0.76rem; font-weight: 700; color: #10b981; background: rgba(16, 185, 129, 0.1); padding: 4px 10px; border-radius: 20px;">
+                        <span class="ping-dot" style="display: inline-block; width: 8px; height: 8px; background: #10b981; border-radius: 50%; animation: pulse-ping 2s infinite;"></span>
+                        Live Sync
+                    </div>
+                    <button type="button" class="secondary-btn" id="adminLogoutBtn">🚪 Log Out</button>
+                </div>
+            </header>
+
+            <!-- Dashboard Stats Row -->
+            <section class="stats-grid" style="margin-bottom: 24px;">
+                <article class="stat-card accent-blue">
+                    <div class="stat-icon">📥</div>
+                    <div>
+                        <p class="stat-label">Active Queue</p>
+                        <h2 id="statActiveJobs">0</h2>
+                    </div>
+                </article>
+                <article class="stat-card accent-green">
+                    <div class="stat-icon">✅</div>
+                    <div>
+                        <p class="stat-label">Completed Jobs</p>
+                        <h2 id="statCompletedJobs">0</h2>
+                    </div>
+                </article>
+                <article class="stat-card accent-orange">
+                    <div class="stat-icon">৳</div>
+                    <div>
+                        <p class="stat-label">Wallet Revenue</p>
+                        <h2 id="statRevenue">৳ 0.00</h2>
+                    </div>
+                </article>
+                <article class="stat-card accent-purple">
+                    <div class="stat-icon">👥</div>
+                    <div>
+                        <p class="stat-label">Total Students</p>
+                        <h2 id="statStudents">0</h2>
+                    </div>
+                </article>
+            </section>
+
+            <!-- VIEW 1: Print Queue Management -->
+            <div id="queue-view" class="tab-content active">
+                <section class="table-card">
+                    <div class="table-header" style="flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between;">
+                        <div>
+                            <p class="eyebrow">Active printing tasks</p>
+                            <h3>Manage Print Requests</h3>
+                        </div>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <input type="text" id="queueSearch" placeholder="Search orders..." style="padding: 8px 14px; font-size: 0.8rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); outline: none; width: 160px; font-weight: 600;">
+                            
+                            <select id="queueFilterTerminal" style="padding: 8px 10px; font-size: 0.8rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); outline: none; font-weight: 600;">
+                                <option value="All">All Terminals</option>
+                                <option value="Central Library - T1">Central Library - T1</option>
+                                <option value="CSE Lab - T2">CSE Lab - T2</option>
+                                <option value="Science Building - T3">Science Building - T3</option>
+                            </select>
+                            <select id="queueFilterStatus" style="padding: 8px 10px; font-size: 0.8rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); outline: none; font-weight: 600;">
+                                <option value="All">All Statuses</option>
+                                <option value="Pending">Pending / Submitted</option>
+                                <option value="Processing">Processing</option>
+                                <option value="Completed">Completed</option>
+                                <option value="Cancelled">Cancelled / Rejected</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table id="adminQueueTable">
+                            <thead>
+                                <tr>
+                                    <th>Student &amp; File</th>
+                                    <th>Terminal</th>
+                                    <th>Pages</th>
+                                    <th>Cost &amp; Payment</th>
+                                    <th>Status</th>
+                                    <th style="text-align: right;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- VIEW 2: Printer Terminal Controls -->
+            <div id="printers-view" class="tab-content">
+                <div class="admin-grid-layout" id="adminPrintersGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                    <!-- Dynamic printer cards -->
+                </div>
+            </div>
+
+            <!-- VIEW 3: Student User Management -->
+            <div id="students-view" class="tab-content">
+                <section class="table-card">
+                    <div class="table-header" style="flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between;">
+                        <div>
+                            <p class="eyebrow">User Directory</p>
+                            <h3>Registered Student Accounts</h3>
+                        </div>
+                        <input type="text" id="studentSearch" placeholder="Search Roll ID..." style="padding: 8px 14px; font-size: 0.8rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); outline: none; width: 180px; font-weight: 600;">
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table id="adminStudentsTable">
+                            <thead>
+                                <tr>
+                                    <th>Student Name</th>
+                                    <th>Roll ID &amp; Dept</th>
+                                    <th>Quota Left</th>
+                                    <th>Wallet Balance</th>
+                                    <th>Status</th>
+                                    <th style="text-align: right;">Recharge Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- VIEW 3.5: Payment Ledger / Transaction History (SCRUM-64) -->
+            <div id="payments-view" class="tab-content">
+                <!-- Payment Overview Analytics Cards -->
+                <section class="stats-grid" style="margin-bottom: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
+                    <article class="stat-card accent-green">
+                        <div class="stat-icon">💰</div>
+                        <div>
+                            <p class="stat-label">Total Cash Collected</p>
+                            <h2 id="paymentStatCollected">৳ 0.00</h2>
+                        </div>
+                    </article>
+                    <article class="stat-card accent-orange">
+                        <div class="stat-icon">🔄</div>
+                        <div>
+                            <p class="stat-label">Total Refund Payouts</p>
+                            <h2 id="paymentStatRefunds">৳ 0.00</h2>
+                        </div>
+                    </article>
+                    <article class="stat-card accent-blue">
+                        <div class="stat-icon">📊</div>
+                        <div>
+                            <p class="stat-label">Net Print Revenue</p>
+                            <h2 id="paymentStatNet">৳ 0.00</h2>
+                        </div>
+                    </article>
+                </section>
+
+                <section class="table-card">
+                    <div class="table-header" style="flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between;">
+                        <div>
+                            <p class="eyebrow">Financial audits ledger</p>
+                            <h3>Payment Ledger Log</h3>
+                        </div>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <input type="text" id="paymentSearch" placeholder="Search reference/roll..." style="padding: 8px 14px; font-size: 0.8rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); outline: none; width: 180px; font-weight: 600;">
+                            
+                            <select id="paymentFilterType" style="padding: 8px 10px; font-size: 0.8rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); outline: none; font-weight: 600;">
+                                <option value="All">All Types</option>
+                                <option value="Cash Top-up">Cash Recharges</option>
+                                <option value="Print Debit">Print Debits</option>
+                                <option value="Print Refund">Refunds Paid</option>
+                                <option value="Quota Adjustment">Quota Adjustments</option>
+                            </select>
+
+                            <button type="button" class="printer-btn" id="exportPaymentsCsvBtn" style="padding: 8px 14px; display: flex; align-items: center; gap: 6px; font-size: 0.8rem;">
+                                📥 Export CSV
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table id="paymentsLedgerTable">
+                            <thead>
+                                <tr>
+                                    <th>Reference ID</th>
+                                    <th>Student User</th>
+                                    <th>Transaction Type</th>
+                                    <th>Date &amp; Time</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Injected programmatically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- VIEW 4: System Configurations Settings -->
+            <div id="settings-view" class="tab-content">
+                <section class="table-card" style="max-width: 600px; padding: 24px;">
+                    <h3 style="margin-top: 0; margin-bottom: 8px;">System Settings</h3>
+                    <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 20px;">Global configuration settings for the printing nodes.</p>
+                    
+                    <form id="adminSettingsForm" style="display: flex; flex-direction: column; gap: 16px;">
+                        <div class="form-group-admin" style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 0.85rem; font-weight: 700; color: var(--text);">Base Price per Page (B&amp;W) (৳)</label>
+                            <input type="number" id="basePriceBW" value="2.0" step="0.5" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text);">
+                        </div>
+                        <div class="form-group-admin" style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 0.85rem; font-weight: 700; color: var(--text);">Base Price per Page (Color) (৳)</label>
+                            <input type="number" id="basePriceColor" value="5.0" step="0.5" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text);">
+                        </div>
+                        <div class="form-group-admin" style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 0.85rem; font-weight: 700; color: var(--text);">Legal Size Surcharge (৳)</label>
+                            <input type="number" id="surchargeLegal" value="1.0" step="0.5" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text);">
+                        </div>
+                        <button type="submit" class="save-profile-btn" style="align-self: flex-start; margin-top: 8px;">Save Settings</button>
+                    </form>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Recharge Student Modal -->
+    <div id="rechargeModal" class="modal-backdrop-print" style="display: none;">
+        <div class="modal-container-print">
+            <form id="rechargeForm">
+                <div class="modal-card-print">
+                    <header class="modal-header-print">
+                        <h3>Recharge Account</h3>
+                        <button type="button" class="close-modal-btn" id="closeRechargeBtn">✕</button>
+                    </header>
+                    <div class="modal-body-print">
+                        <div style="background: var(--surface-2); padding: 12px; border-radius: 12px; margin-bottom: 16px; border: 1px solid var(--border);">
+                            <span style="font-size: 0.72rem; color: var(--muted); font-weight: 700; text-transform: uppercase;">Selected Student</span>
+                            <h4 id="rechargeStudentName" style="margin: 4px 0 0 0; font-size: 1.15rem; font-weight: 800; color: var(--text);">Ava Nguyen (Roll-4010)</h4>
+                        </div>
+
+                        <div class="form-group-admin" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px;">
+                            <label style="font-size: 0.85rem; font-weight: 700; color: var(--text);">Wallet Cash Recharge (৳)</label>
+                            <input type="number" id="rechargeWalletAmount" placeholder="e.g. 500" min="0" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text);">
+                        </div>
+
+                        <div class="form-group-admin" style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 0.85rem; font-weight: 700; color: var(--text);">Quota Pages Top-up (pages)</label>
+                            <input type="number" id="rechargeQuotaAmount" placeholder="e.g. 50" min="0" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text);">
+                        </div>
+                    </div>
+                    <div class="modal-actions-print" style="margin-top: 20px;">
+                        <button type="button" class="secondary-btn" id="cancelRechargeBtn">Cancel</button>
+                        <button type="submit" class="save-profile-btn">Apply Recharge</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Order Details Drawer (SCRUM-59) -->
+    <div id="adminOrderDrawer" class="admin-drawer">
+        <div class="admin-drawer-backdrop" id="closeAdminDrawerBackdrop"></div>
+        <div class="admin-drawer-content">
+            <header class="admin-drawer-header">
+                <div>
+                    <span class="eyebrow">Admin Order Panel</span>
+                    <h3 id="drawerAdminRefId">TXN-00000</h3>
+                </div>
+                <button type="button" class="drawer-close-btn" id="closeAdminDrawerBtn" aria-label="Close details">✕</button>
+            </header>
+
+            <div class="admin-drawer-scroll-area">
+                <!-- Student details -->
+                <section class="drawer-section">
+                    <h4 class="section-title">Student Profile</h4>
+                    <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 4px;">
+                        <strong id="drawerStudentName" style="font-size: 1.05rem; color: var(--text);">Ava Nguyen</strong>
+                        <span id="drawerStudentDetails" style="font-size: 0.8rem; color: var(--muted);">Roll-4010 • Computer Science</span>
+                        <span id="drawerStudentEmail" style="font-size: 0.78rem; color: var(--muted);">ava.nguyen@univ.edu</span>
+                    </div>
+                </section>
+
+                <!-- Document details -->
+                <section class="drawer-section">
+                    <h4 class="section-title">Job Specifications</h4>
+                    <div class="details-grid-card">
+                        <div class="details-row">
+                            <span class="detail-label">File Name:</span>
+                            <strong class="detail-value" id="drawerAdminFileName">Lab_Report.pdf</strong>
+                        </div>
+                        <div class="details-row">
+                            <span class="detail-label">Pages Subset:</span>
+                            <span class="detail-value" id="drawerAdminPages">All (12 pages)</span>
+                        </div>
+                        <div class="details-row">
+                            <span class="detail-label">Copies:</span>
+                            <span class="detail-value" id="drawerAdminCopies">1 copy</span>
+                        </div>
+                        <div class="details-row">
+                            <span class="detail-label">Color Mode:</span>
+                            <span class="detail-value" id="drawerAdminColor">Black & White</span>
+                        </div>
+                        <div class="details-row">
+                            <span class="detail-label">Layout:</span>
+                            <span class="detail-value" id="drawerAdminDuplex">Double-Sided</span>
+                        </div>
+                        <div class="details-row">
+                            <span class="detail-label">Paper config:</span>
+                            <span class="detail-value" id="drawerAdminPaper">A4 (Portrait)</span>
+                        </div>
+                        <div class="details-row highlight">
+                            <span class="detail-label">Estimated Cost:</span>
+                            <strong class="detail-value" id="drawerAdminCost">৳ 24.00</strong>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Terminal Routing and Control -->
+                <section class="drawer-section">
+                    <h4 class="section-title">Terminal Routing &amp; Status</h4>
+                    <div style="display: flex; flex-direction: column; gap: 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 16px; padding: 18px;">
+                        <!-- Terminal reassignment select dropdown -->
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label for="drawerAdminReroute" style="font-size: 0.8rem; font-weight: 700; color: var(--text);">Re-route Assigned Printer:</label>
+                            <select id="drawerAdminReroute" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-weight: 600; outline: none; width: 100%;">
+                                <option value="Central Library - T1">Central Library - T1</option>
+                                <option value="CSE Lab - T2">CSE Lab - T2</option>
+                                <option value="Science Building - T3">Science Building - T3</option>
+                            </select>
+                        </div>
+
+                        <!-- Current status field -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; margin-top: 4px;">
+                            <span style="font-weight: 500; color: var(--muted);">Current Status:</span>
+                            <span class="status-badge processing" id="drawerAdminStatusLabel" style="margin: 0;">Pending</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <footer class="admin-drawer-footer" style="padding: 24px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; gap: 12px;">
+                    <button type="button" class="save-profile-btn" id="drawerBtnProcess" style="flex: 1; padding: 12px; font-weight: 700; font-size: 0.85rem; border-radius: 10px;">Process Job</button>
+                    <button type="button" class="save-profile-btn" id="drawerBtnComplete" style="flex: 1; padding: 12px; font-weight: 700; font-size: 0.85rem; border-radius: 10px; background: #10b981; border-color: #10b981;">Complete Job</button>
+                </div>
+                <button type="button" class="cancel-job-btn" id="drawerBtnReject" style="width: 100%; padding: 12px; font-weight: 700; font-size: 0.85rem; border-radius: 10px; margin: 0;">Reject &amp; Refund Job</button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Student Account Details & Ledger Drawer (SCRUM-62) -->
+    <div id="studentDetailDrawer" class="admin-drawer">
+        <div class="admin-drawer-backdrop" id="closeStudentDrawerBackdrop"></div>
+        <div class="admin-drawer-content" style="width: min(100%, 520px);">
+            <header class="admin-drawer-header">
+                <div>
+                    <span class="eyebrow">Student Account Portal</span>
+                    <h3 id="drawerStudentTitleName">Ava Nguyen</h3>
+                </div>
+                <button type="button" class="drawer-close-btn" id="closeStudentDrawerBtn" aria-label="Close details">✕</button>
+            </header>
+
+            <div class="admin-drawer-scroll-area">
+                <!-- User basic profile info -->
+                <section class="drawer-section">
+                    <h4 class="section-title">Academic Details</h4>
+                    <div class="details-grid-card">
+                        <div class="details-row">
+                            <span class="detail-label">Roll ID:</span>
+                            <strong class="detail-value" id="drawerStudentProfileRoll">4010</strong>
+                        </div>
+                        <div class="details-row">
+                            <span class="detail-label">Department:</span>
+                            <span class="detail-value" id="drawerStudentProfileDept">Computer Science</span>
+                        </div>
+                        <div class="details-row">
+                            <span class="detail-label">Email:</span>
+                            <span class="detail-value" id="drawerStudentProfileEmail">ava.nguyen@univ.edu</span>
+                        </div>
+                        <div class="details-row">
+                            <span class="detail-label">Session &amp; Semester:</span>
+                            <span class="detail-value" id="drawerStudentProfileSession">2022-23 (8th Sem)</span>
+                        </div>
+                        <div class="details-row">
+                            <span class="detail-label">Account Status:</span>
+                            <span class="status-badge completed" id="drawerStudentProfileStatusLabel">Active</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Accounts Balance overview metrics -->
+                <section class="drawer-section">
+                    <h4 class="section-title">Current Printing Quota &amp; Wallet</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 14px; text-align: center;">
+                            <span style="font-size: 0.72rem; color: var(--muted); font-weight: 700; text-transform: uppercase;">Remaining Quota</span>
+                            <h3 id="drawerStudentQuotaPages" style="margin: 4px 0 0 0; font-size: 1.3rem; font-weight: 800; color: var(--text);">76 pages</h3>
+                        </div>
+                        <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 14px; text-align: center;">
+                            <span style="font-size: 0.72rem; color: var(--muted); font-weight: 700; text-transform: uppercase;">Wallet Cash</span>
+                            <h3 id="drawerStudentWalletCash" style="margin: 4px 0 0 0; font-size: 1.3rem; font-weight: 800; color: var(--text);">৳ 1,250.00</h3>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Transaction history logs panel -->
+                <section class="drawer-section">
+                    <h4 class="section-title">Account Transaction History</h4>
+                    <div class="table-wrapper" style="max-height: 250px; overflow-y: auto; border: 1px solid var(--border); border-radius: 12px;">
+                        <table id="drawerStudentTxnTable" style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+                            <thead>
+                                <tr style="background: var(--surface-2); border-bottom: 1px solid var(--border);">
+                                    <th style="padding: 10px; text-align: left;">Date</th>
+                                    <th style="padding: 10px; text-align: left;">Activity Type</th>
+                                    <th style="padding: 10px; text-align: right;">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Dynamic transactions ledger -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <footer class="admin-drawer-footer" style="padding: 24px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; gap: 12px;">
+                    <button type="button" class="save-profile-btn" id="drawerStudentBtnRecharge" style="flex: 1; padding: 12px; font-weight: 700; font-size: 0.85rem; border-radius: 10px;">⚡ Recharge Account</button>
+                    <button type="button" class="printer-btn" id="drawerStudentBtnToggleStatus" style="flex: 1; padding: 12px; font-weight: 700; font-size: 0.85rem; border-radius: 10px; border-color: var(--danger); color: var(--danger); outline: none;">🚫 Suspend Student</button>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>
