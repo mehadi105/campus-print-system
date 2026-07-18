@@ -14,7 +14,8 @@
     "test:upload": "node --test backend/tests/upload.test.js",
     "test:documents": "node --test backend/tests/documentManagement.test.js",
     "test:orders": "node --test backend/tests/orderTracking.test.js",
-    "test:admin-orders": "node --test backend/tests/adminOrders.test.js"
+    "test:admin-orders": "node --test backend/tests/adminOrders.test.js",
+    "test:user-payment": "node --test backend/tests/userPayment.test.js"
   },
   "keywords": [
     "campus",
