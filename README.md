@@ -209,6 +209,11 @@ Orders persist in:
 - JSON store: `backend/data/orders.json` (Express modular API)
 - SQLite: `print_orders` table via `npm run start:sqlite` (`POST /api/print-orders`)
 
+### Order Status & History APIs (SCRUM-55)
+
+- `GET /api/orders/:id/status` — current status for tracking
+- `GET /api/orders/history?email=student@university.edu` — previous orders
+
 ## License
 
 ISC — see [LICENSE](LICENSE).

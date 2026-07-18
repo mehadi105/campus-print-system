@@ -1,5 +1,11 @@
 const express = require('express');
-const { addOrder } = require('../utils/orderStore');
+const {
+  addOrder,
+  findOrderById,
+  getOrdersByEmail,
+  filterOrders,
+  getOrders,
+} = require('../utils/orderStore');
 
 const router = express.Router();
 
@@ -84,6 +90,80 @@ router.post('/', (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Server error while creating print order',
+    });
+  }
+});
+
+// GET /api/orders/history — Order History API (SCRUM-55 / SCRUM-56)
+router.get('/history', (req, res) => {
+  try {
+    const { email, status, q, from, to } = req.query;
+    const source = email ? getOrdersByEmail(email) : getOrders();
+    const orders = filterOrders(source, { email, status, q, from, to });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Order history retrieved successfully',
+      count: orders.length,
+      orders,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Server error while retrieving order history',
+    });
+  }
+});
+
+// GET /api/orders/:id/status — Order Status API (SCRUM-55)
+router.get('/:id/status', (req, res) => {
+  try {
+    const order = findOrderById(req.params.id);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Order status retrieved successfully',
+      status: {
+        id: order.id,
+        documentName: order.documentName,
+        status: order.status,
+        estimatedCost: order.estimatedCost,
+        printerTerminal: order.printerTerminal,
+        updatedAt: order.updatedAt || order.createdAt,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Server error while retrieving order status',
+    });
+  }
+});
+
+// GET /api/orders/:id
+router.get('/:id', (req, res) => {
+  try {
+    const order = findOrderById(req.params.id);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found',
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      order,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Server error while retrieving order',
     });
   }
 });
