@@ -419,6 +419,82 @@ app.get('/api/print-orders', authenticateToken, (req, res) => {
     });
 });
 
+// 7.5 Cancel Print Order (SCRUM-53)
+app.post('/api/print-orders/:id/cancel', authenticateToken, (req, res) => {
+    const orderId = req.params.id;
+    const userId = req.user.id;
+
+    // Fetch print order to check authorization and status
+    db.get('SELECT * FROM print_orders WHERE id = ? AND userId = ?', [orderId, userId], (err, order) => {
+        if (err) return res.status(500).json({ error: 'Database error fetching order: ' + err.message });
+        if (!order) return res.status(404).json({ error: 'Print order not found.' });
+
+        if (order.status !== 'Pending' && order.status !== 'Submitted') {
+            return res.status(400).json({ error: 'Only pending or submitted print orders can be cancelled.' });
+        }
+
+        // Update print order status to Cancelled
+        db.run("UPDATE print_orders SET status = 'Cancelled' WHERE id = ?", [orderId], (err) => {
+            if (err) return res.status(500).json({ error: 'Database error cancelling print order: ' + err.message });
+
+            // Restore document status if applicable
+            if (order.documentId) {
+                db.run("UPDATE documents SET status = 'Ready to Print' WHERE id = ?", [order.documentId]);
+            }
+
+            // Fetch current user details to execute refund
+            db.get('SELECT * FROM users WHERE id = ?', [userId], (err, user) => {
+                if (err) return res.status(500).json({ error: 'Database error fetching user: ' + err.message });
+                if (!user) return res.status(404).json({ error: 'User not found.' });
+
+                const refundPages = order.pages * order.copies;
+                const refundCost = order.estimatedCost;
+
+                if (order.paymentMethod === 'Quota') {
+                    // Refund quota
+                    const newUsedPages = Math.max(user.usedPages - refundPages, 0);
+                    db.run('UPDATE users SET usedPages = ? WHERE id = ?', [newUsedPages, userId], (err) => {
+                        if (err) console.error('Error refunding pages quota:', err.message);
+                        logCancelTransaction();
+                    });
+                } else {
+                    // Refund wallet balance
+                    const newBalance = user.walletBalance + refundCost;
+                    db.run('UPDATE users SET walletBalance = ? WHERE id = ?', [newBalance, userId], (err) => {
+                        if (err) console.error('Error refunding wallet balance:', err.message);
+                        logCancelTransaction();
+                    });
+                }
+
+                function logCancelTransaction() {
+                    const txnRef = 'TXN-' + Math.floor(10000 + Math.random() * 90000);
+                    const txnType = order.paymentMethod === 'Quota' ? 'Print Quota Refund' : 'Print Wallet Refund';
+                    const txnAmount = order.paymentMethod === 'Quota' ? 0 : refundCost;
+
+                    // Log credit transaction
+                    db.run(`
+                        INSERT INTO transactions (userId, referenceId, type, amount, status)
+                        VALUES (?, ?, ?, ?, 'Success')
+                    `, [userId, txnRef, txnType, txnAmount], (err) => {
+                        if (err) console.error('Error logging refund transaction:', err.message);
+
+                        // Return updated student profile data
+                        db.get('SELECT * FROM users WHERE id = ?', [userId], (err, updatedUser) => {
+                            if (err) return res.status(500).json({ error: 'Database error: ' + err.message });
+                            const { password: _, ...userWithoutPassword } = updatedUser;
+                            res.json({
+                                message: 'Print order cancelled and refunded successfully.',
+                                orderId: orderId,
+                                student: userWithoutPassword
+                            });
+                        });
+                    });
+                }
+            });
+        });
+    });
+});
+
 // 8. Get student's transaction history
 app.get('/api/transactions', authenticateToken, (req, res) => {
     const userId = req.user.id;

@@ -567,6 +567,238 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         };
 
+        // Unified table population helper with click-to-track tracking listeners (SCRUM-53)
+        const populateTable = (tbody, items) => {
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            items.forEach(order => {
+                const date = new Date(order.createdAt || Date.now()).toLocaleDateString('en-GB', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric'
+                });
+
+                const copiesStr = order.copies > 1 ? ` (${order.copies} copies)` : '';
+                const costDisplay = order.paymentMethod === 'Quota' ? 'Quota' : `৳ ${order.estimatedCost}`;
+                
+                const status = order.status || 'Pending';
+                let badgeClass = 'processing';
+                if (status.toLowerCase() === 'completed' || status.toLowerCase() === 'ready for pickup') {
+                    badgeClass = 'completed';
+                } else if (status.toLowerCase() === 'cancelled') {
+                    badgeClass = 'cancelled';
+                }
+
+                const tr = document.createElement('tr');
+                tr.style.cursor = 'pointer';
+                tr.innerHTML = `
+                    <td>
+                        <div>
+                            <strong style="display: block;">${order.documentName}</strong>
+                            <small style="color: var(--muted); font-size: 0.76rem;">${order.colorMode} • ${order.duplex} • ${order.paperSize}${copiesStr}</small>
+                        </div>
+                    </td>
+                    <td>${date}</td>
+                    <td>${order.pages * order.copies}</td>
+                    <td>${costDisplay}</td>
+                    <td><span class="status-badge ${badgeClass}">${status}</span></td>
+                `;
+                
+                tr.addEventListener('click', () => openOrderDrawer(order));
+                tbody.appendChild(tr);
+            });
+        };
+
+        // ── Order Status Drawer & Tracking (SCRUM-53) ──
+        const orderDrawer = document.getElementById('orderDrawer');
+        const closeDrawerBackdrop = document.getElementById('closeDrawerBackdrop');
+        const closeDrawerBtn = document.getElementById('closeDrawerBtn');
+        const cancelPrintJobBtn = document.getElementById('cancelPrintJobBtn');
+
+        let selectedTrackingOrder = null;
+
+        const openOrderDrawer = (order) => {
+            if (!orderDrawer || !order) return;
+            selectedTrackingOrder = order;
+
+            const drawerEyebrow = document.getElementById('drawerEyebrow');
+            const drawerRefId = document.getElementById('drawerRefId');
+            const drawerFileName = document.getElementById('drawerFileName');
+            const drawerTerminal = document.getElementById('drawerTerminal');
+            const drawerColor = document.getElementById('drawerColor');
+            const drawerDuplex = document.getElementById('drawerDuplex');
+            const drawerPaper = document.getElementById('drawerPaper');
+            const drawerPagesRange = document.getElementById('drawerPagesRange');
+            const drawerCopies = document.getElementById('drawerCopies');
+            const drawerCost = document.getElementById('drawerCost');
+            const qrAuthToken = document.getElementById('qrAuthToken');
+
+            if (drawerEyebrow) {
+                const isCompleted = order.status.toLowerCase() === 'completed' || order.status.toLowerCase() === 'ready for pickup';
+                const isCancelled = order.status.toLowerCase() === 'cancelled';
+                drawerEyebrow.textContent = isCompleted ? 'Completed Print Request' : (isCancelled ? 'Cancelled Print Request' : 'Active Print Request');
+            }
+            if (drawerRefId) drawerRefId.textContent = order.referenceId || 'TXN-' + Math.floor(10000 + Math.random() * 90000);
+            if (drawerFileName) drawerFileName.textContent = order.documentName;
+            if (drawerTerminal) drawerTerminal.textContent = order.printerTerminal;
+            if (drawerColor) drawerColor.textContent = order.colorMode;
+            if (drawerDuplex) drawerDuplex.textContent = order.duplex;
+            if (drawerPaper) drawerPaper.textContent = `${order.paperSize || 'A4'} (${order.orientation || 'Portrait'})`;
+            if (drawerPagesRange) drawerPagesRange.textContent = `${order.pageRange || 'All'} (${order.pages || 10} pages)`;
+            if (drawerCopies) drawerCopies.textContent = `${order.copies} cop${order.copies > 1 ? 'ies' : 'y'}`;
+            if (drawerCost) {
+                drawerCost.textContent = order.paymentMethod === 'Quota' ? 'Quota' : `৳ ${order.estimatedCost}`;
+            }
+            
+            if (qrAuthToken) {
+                qrAuthToken.textContent = `PRINT-SEC-${order.referenceId ? order.referenceId.split('-')[1] : Math.floor(10000 + Math.random() * 90000)}`;
+            }
+
+            const status = (order.status || 'Pending').toLowerCase();
+            const stepSubmitted = document.getElementById('stepSubmitted');
+            const stepQueue = document.getElementById('stepQueue');
+            const stepPrinting = document.getElementById('stepPrinting');
+            const stepCompleted = document.getElementById('stepCompleted');
+            const drawerQrSection = document.getElementById('drawerQrSection');
+
+            [stepSubmitted, stepQueue, stepPrinting, stepCompleted].forEach(node => {
+                if (node) node.className = 'step-node';
+            });
+            if (drawerQrSection) drawerQrSection.style.display = 'block';
+
+            if (status === 'cancelled') {
+                if (stepSubmitted) stepSubmitted.className = 'step-node cancelled';
+                const stepTitle = stepSubmitted?.querySelector('.step-title');
+                if (stepTitle) stepTitle.textContent = 'Cancelled';
+                const stepDesc = stepSubmitted?.querySelector('.step-desc');
+                if (stepDesc) stepDesc.textContent = 'Print job cancelled by student';
+
+                if (stepQueue) stepQueue.style.display = 'none';
+                if (stepPrinting) stepPrinting.style.display = 'none';
+                if (stepCompleted) stepCompleted.style.display = 'none';
+                if (drawerQrSection) drawerQrSection.style.display = 'none';
+            } else {
+                if (stepQueue) stepQueue.style.display = 'flex';
+                if (stepPrinting) stepPrinting.style.display = 'flex';
+                if (stepCompleted) stepCompleted.style.display = 'flex';
+                const stepTitle = stepSubmitted?.querySelector('.step-title');
+                if (stepTitle) stepTitle.textContent = 'Submitted';
+                const stepDesc = stepSubmitted?.querySelector('.step-desc');
+                if (stepDesc) stepDesc.textContent = 'Received by printer system';
+
+                if (status === 'pending' || status === 'submitted') {
+                    if (stepSubmitted) stepSubmitted.className = 'step-node active';
+                } else if (status === 'processing' || status === 'in queue') {
+                    if (stepSubmitted) stepSubmitted.className = 'step-node completed';
+                    if (stepQueue) stepQueue.className = 'step-node active';
+                } else if (status === 'printing') {
+                    if (stepSubmitted) stepSubmitted.className = 'step-node completed';
+                    if (stepQueue) stepQueue.className = 'step-node completed';
+                    if (stepPrinting) stepPrinting.className = 'step-node active';
+                } else if (status === 'completed' || status === 'ready for pickup') {
+                    if (stepSubmitted) stepSubmitted.className = 'step-node completed';
+                    if (stepQueue) stepQueue.className = 'step-node completed';
+                    if (stepPrinting) stepPrinting.className = 'step-node completed';
+                    if (stepCompleted) stepCompleted.className = 'step-node completed';
+                }
+            }
+
+            if (cancelPrintJobBtn) {
+                cancelPrintJobBtn.disabled = (status !== 'pending' && status !== 'submitted');
+            }
+
+            orderDrawer?.classList.add('open');
+        };
+
+        const closeOrderDrawer = () => {
+            orderDrawer?.classList.remove('open');
+            selectedTrackingOrder = null;
+        };
+
+        closeDrawerBtn?.addEventListener('click', closeOrderDrawer);
+        closeDrawerBackdrop?.addEventListener('click', closeOrderDrawer);
+
+        cancelPrintJobBtn?.addEventListener('click', () => {
+            if (!selectedTrackingOrder) return;
+            
+            const isConfirmed = confirm('Are you sure you want to cancel this print request? Quota pages or wallet funds will be fully refunded.');
+            if (!isConfirmed) return;
+
+            const orderId = selectedTrackingOrder.id;
+
+            fetch(`/api/print-orders/${orderId}/cancel`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(res => {
+                if (!res.ok) return res.json().then(j => { throw new Error(j.error || 'Server error') });
+                return res.json();
+            })
+            .then(data => {
+                localStorage.setItem('currentStudent', JSON.stringify(data.student));
+                if (window.syncProfileDisplay) {
+                    window.syncProfileDisplay(data.student);
+                } else if (typeof renderStudentData === 'function') {
+                    renderStudentData(data.student);
+                }
+
+                alert('Print request cancelled successfully and resources refunded.');
+                closeOrderDrawer();
+                refreshRecentActivitiesTable();
+                refreshTransactionsTable();
+                renderDocumentLibrary();
+            })
+            .catch(err => {
+                console.warn('API cancel print job failed, running local fallback...', err);
+                
+                const localOrders = JSON.parse(localStorage.getItem('printOrders') || '[]');
+                const idx = localOrders.findIndex(o => o.id === orderId);
+                if (idx !== -1) {
+                    const order = localOrders[idx];
+                    if (order.status !== 'Pending' && order.status !== 'Submitted') {
+                        alert('Only pending orders can be cancelled.');
+                        return;
+                    }
+                    order.status = 'Cancelled';
+                    localStorage.setItem('printOrders', JSON.stringify(localOrders));
+
+                    const student = JSON.parse(localStorage.getItem('currentStudent') || 'null');
+                    if (student) {
+                        const refundPages = order.pages * order.copies;
+                        const refundCost = order.estimatedCost;
+
+                        if (order.paymentMethod === 'Quota') {
+                            student.usedPages = Math.max((student.usedPages || 50) - refundPages, 0);
+                        } else {
+                            student.walletBalance = (student.walletBalance || 1250) + refundCost;
+                        }
+                        localStorage.setItem('currentStudent', JSON.stringify(student));
+                        if (typeof renderStudentData === 'function') {
+                            renderStudentData(student);
+                        }
+                    }
+
+                    const refundTxn = {
+                        id: 'txn_' + Date.now(),
+                        referenceId: 'TXN-' + Math.floor(10000 + Math.random() * 90000),
+                        type: order.paymentMethod === 'Quota' ? 'Print Quota Refund' : 'Print Wallet Refund',
+                        amount: order.paymentMethod === 'Quota' ? 0 : order.estimatedCost,
+                        status: 'Success',
+                        createdAt: new Date().toISOString()
+                    };
+                    const localTxns = JSON.parse(localStorage.getItem('transactions') || '[]');
+                    localTxns.unshift(refundTxn);
+                    localStorage.setItem('transactions', JSON.stringify(localTxns));
+
+                    alert('Print request cancelled successfully and resources refunded (Offline fallback).');
+                    closeOrderDrawer();
+                    refreshRecentActivitiesTable();
+                    refreshTransactionsTable();
+                    renderDocumentLibrary();
+                }
+            });
+        });
+
         const refreshRecentActivitiesTable = () => {
             fetch('/api/print-orders', {
                 method: 'GET',
@@ -587,36 +819,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const dashboardTbody = document.querySelector('#dashboard-view .table-wrapper table tbody');
                 const historyTbody = document.querySelector('#history-view .table-wrapper table tbody');
 
-                const populateTable = (tbody, items) => {
-                    if (!tbody) return;
-                    tbody.innerHTML = '';
-                    items.forEach(order => {
-                        const date = new Date(order.createdAt || Date.now()).toLocaleDateString('en-GB', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric'
-                        });
-
-                        const copiesStr = order.copies > 1 ? ` (${order.copies} copies)` : '';
-                        const costDisplay = order.paymentMethod === 'Quota' ? 'Quota' : `৳ ${order.estimatedCost}`;
-
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td>
-                                <div>
-                                    <strong style="display: block;">${order.documentName}</strong>
-                                    <small style="color: var(--muted); font-size: 0.76rem;">${order.colorMode} • ${order.duplex} • ${order.paperSize}${copiesStr}</small>
-                                </div>
-                            </td>
-                            <td>${date}</td>
-                            <td>${order.pages * order.copies}</td>
-                            <td>${costDisplay}</td>
-                            <td><span class="status-badge ${order.status.toLowerCase() === 'completed' ? 'completed' : 'processing'}">${order.status || 'Pending'}</span></td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
-                };
-
                 if (mergedOrders.length > 0) {
                     populateTable(dashboardTbody, mergedOrders);
                     populateTable(historyTbody, mergedOrders);
@@ -631,35 +833,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const localOrders = JSON.parse(localStorage.getItem('printOrders') || '[]');
                 const dashboardTbody = document.querySelector('#dashboard-view .table-wrapper table tbody');
                 const historyTbody = document.querySelector('#history-view .table-wrapper table tbody');
-
-                const populateTable = (tbody, items) => {
-                    if (!tbody) return;
-                    tbody.innerHTML = '';
-                    items.forEach(order => {
-                        const date = new Date(order.createdAt || Date.now()).toLocaleDateString('en-GB', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric'
-                        });
-                        const copiesStr = order.copies > 1 ? ` (${order.copies} copies)` : '';
-                        const costDisplay = order.paymentMethod === 'Quota' ? 'Quota' : `৳ ${order.estimatedCost}`;
-
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td>
-                                <div>
-                                    <strong style="display: block;">${order.documentName}</strong>
-                                    <small style="color: var(--muted); font-size: 0.76rem;">${order.colorMode} • ${order.duplex} • ${order.paperSize}${copiesStr}</small>
-                                </div>
-                            </td>
-                            <td>${date}</td>
-                            <td>${order.pages * order.copies}</td>
-                            <td>${costDisplay}</td>
-                            <td><span class="status-badge processing">${order.status || 'Pending'}</span></td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
-                };
 
                 if (localOrders.length > 0) {
                     populateTable(dashboardTbody, localOrders);
