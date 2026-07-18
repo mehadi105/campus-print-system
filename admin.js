@@ -662,7 +662,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         filtered.forEach(s => {
             const tr = document.createElement('tr');
+            tr.style.cursor = 'pointer';
             const quotaLeft = (s.totalPages || 100) - (s.usedPages || 0);
+            
+            const isSuspended = (s.status || 'Active') === 'Suspended';
+            const statusClass = isSuspended ? 'suspended' : 'completed';
 
             tr.innerHTML = `
                 <td>
@@ -675,28 +679,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 </td>
                 <td>${quotaLeft} / ${s.totalPages || 100} pages</td>
                 <td>৳ ${(s.walletBalance || 0).toFixed(2)}</td>
-                <td><span class="status-badge completed">${s.status || 'Active'}</span></td>
+                <td><span class="status-badge ${statusClass}">${s.status || 'Active'}</span></td>
                 <td style="text-align: right;">
                     <button type="button" class="admin-btn btn-process open-recharge-modal">⚡ Recharge</button>
                 </td>
             `;
 
-            // Open recharge modal
-            tr.querySelector('.open-recharge-modal').addEventListener('click', () => {
-                selectedStudentForRecharge = s;
-                
-                const rechargeStudentName = document.getElementById('rechargeStudentName');
-                if (rechargeStudentName) {
-                    rechargeStudentName.textContent = `${s.fullName} (Roll-${s.rollId})`;
-                }
-                
-                document.getElementById('rechargeWalletAmount').value = '';
-                document.getElementById('rechargeQuotaAmount').value = '';
-                document.getElementById('rechargeModal').style.display = 'flex';
+            // Open recharge modal (stopping click propagation to avoid opening drawer)
+            tr.querySelector('.open-recharge-modal').addEventListener('click', (e) => {
+                e.stopPropagation();
+                triggerRechargeModal(s);
             });
+
+            // Open student detail drawer
+            tr.addEventListener('click', () => openStudentDetailDrawer(s));
 
             tbody.appendChild(tr);
         });
+    };
+
+    const triggerRechargeModal = (student) => {
+        selectedStudentForRecharge = student;
+        
+        const rechargeStudentName = document.getElementById('rechargeStudentName');
+        if (rechargeStudentName) {
+            rechargeStudentName.textContent = `${student.fullName} (Roll-${student.rollId})`;
+        }
+        
+        document.getElementById('rechargeWalletAmount').value = '';
+        document.getElementById('rechargeQuotaAmount').value = '';
+        document.getElementById('rechargeModal').style.display = 'flex';
     };
 
     // Modal Close actions
@@ -740,6 +752,13 @@ document.addEventListener('DOMContentLoaded', () => {
             closeRechargeModal();
             refreshAdminStudents();
             refreshAdminStats();
+            
+            // If the detail drawer is open for this student, reload it
+            if (selectedAdminStudent && selectedAdminStudent.id === studentId) {
+                // Update basic caches reference
+                const updated = adminCachedStudents.find(s => s.id === studentId);
+                if (updated) openStudentDetailDrawer(updated);
+            }
         })
         .catch(err => {
             console.warn('API Recharge failed, applying local recharge adjustment...', err);
@@ -790,8 +809,206 @@ document.addEventListener('DOMContentLoaded', () => {
             closeRechargeModal();
             refreshAdminStudents();
             refreshAdminStats();
+
+            // If the detail drawer is open for this student, reload it
+            if (selectedAdminStudent && selectedAdminStudent.id === studentId) {
+                const updated = currentStudent && currentStudent.id === studentId ? currentStudent : registeredStudent;
+                if (updated) openStudentDetailDrawer(updated);
+            }
         });
     });
+
+
+    // ── Student details Drawer Controller (SCRUM-62) ──
+    const studentDetailDrawer = document.getElementById('studentDetailDrawer');
+    const closeStudentDrawerBackdrop = document.getElementById('closeStudentDrawerBackdrop');
+    const closeStudentDrawerBtn = document.getElementById('closeStudentDrawerBtn');
+    const drawerStudentBtnToggleStatus = document.getElementById('drawerStudentBtnToggleStatus');
+    const drawerStudentBtnRecharge = document.getElementById('drawerStudentBtnRecharge');
+
+    let selectedAdminStudent = null;
+
+    const openStudentDetailDrawer = (student) => {
+        if (!studentDetailDrawer || !student) return;
+        selectedAdminStudent = student;
+
+        // Render metadata profile fields
+        const drawerStudentTitleName = document.getElementById('drawerStudentTitleName');
+        const drawerStudentProfileRoll = document.getElementById('drawerStudentProfileRoll');
+        const drawerStudentProfileDept = document.getElementById('drawerStudentProfileDept');
+        const drawerStudentProfileEmail = document.getElementById('drawerStudentProfileEmail');
+        const drawerStudentProfileSession = document.getElementById('drawerStudentProfileSession');
+        const drawerStudentProfileStatusLabel = document.getElementById('drawerStudentProfileStatusLabel');
+
+        const drawerStudentQuotaPages = document.getElementById('drawerStudentQuotaPages');
+        const drawerStudentWalletCash = document.getElementById('drawerStudentWalletCash');
+
+        if (drawerStudentTitleName) drawerStudentTitleName.textContent = student.fullName;
+        if (drawerStudentProfileRoll) drawerStudentProfileRoll.textContent = student.rollId;
+        if (drawerStudentProfileDept) drawerStudentProfileDept.textContent = student.department;
+        if (drawerStudentProfileEmail) drawerStudentProfileEmail.textContent = student.email;
+        if (drawerStudentProfileSession) {
+            drawerStudentProfileSession.textContent = `${student.session || 'N/A'} (${student.semester || 'N/A'} Sem)`;
+        }
+
+        const isSuspended = (student.status || 'Active') === 'Suspended';
+        if (drawerStudentProfileStatusLabel) {
+            drawerStudentProfileStatusLabel.textContent = student.status || 'Active';
+            drawerStudentProfileStatusLabel.className = 'status-badge ' + (isSuspended ? 'suspended' : 'completed');
+        }
+
+        const quotaLeft = (student.totalPages || 100) - (student.usedPages || 0);
+        if (drawerStudentQuotaPages) drawerStudentQuotaPages.textContent = `${quotaLeft} pages`;
+        if (drawerStudentWalletCash) drawerStudentWalletCash.textContent = `৳ ${(student.walletBalance || 0).toFixed(2)}`;
+
+        // Set suspend toggle buttons label status
+        if (drawerStudentBtnToggleStatus) {
+            if (isSuspended) {
+                drawerStudentBtnToggleStatus.textContent = '🟢 Activate Account';
+                drawerStudentBtnToggleStatus.classList.add('active-btn');
+            } else {
+                drawerStudentBtnToggleStatus.textContent = '🚫 Suspend Account';
+                drawerStudentBtnToggleStatus.classList.remove('active-btn');
+            }
+        }
+
+        // Sub-fetch student transactions ledger list
+        fetchStudentTransactions(student.id || student.rollId);
+
+        studentDetailDrawer.classList.add('open');
+    };
+
+    const closeStudentDetailDrawer = () => {
+        studentDetailDrawer?.classList.remove('open');
+        selectedAdminStudent = null;
+    };
+
+    closeStudentDrawerBtn?.addEventListener('click', closeStudentDetailDrawer);
+    closeStudentDrawerBackdrop?.addEventListener('click', closeStudentDetailDrawer);
+
+    // Toggle suspend/activate button action listener
+    drawerStudentBtnToggleStatus?.addEventListener('click', () => {
+        if (!selectedAdminStudent) return;
+        const currentStatus = selectedAdminStudent.status || 'Active';
+        const nextStatus = currentStatus === 'Suspended' ? 'Active' : 'Suspended';
+
+        const actionText = nextStatus === 'Suspended' ? 'suspend' : 'activate';
+        const confirmToggle = confirm(`Are you sure you want to ${actionText} this student account?`);
+        if (!confirmToggle) return;
+
+        fetch(`/api/admin/students/${selectedAdminStudent.id}/status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ status: nextStatus })
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('Status toggle failed');
+            return res.json();
+        })
+        .then(() => {
+            alert(`Student account successfully ${nextStatus === 'Suspended' ? 'suspended' : 'activated'}.`);
+            selectedAdminStudent.status = nextStatus;
+            
+            // Sync with cached local array
+            const idx = adminCachedStudents.findIndex(s => s.id === selectedAdminStudent.id);
+            if (idx !== -1) adminCachedStudents[idx].status = nextStatus;
+
+            // Re-render
+            openStudentDetailDrawer(selectedAdminStudent);
+            renderAdminStudentsTable();
+        })
+        .catch(err => {
+            console.warn('API status toggle failed, running offline update...', err);
+            
+            // Offline update
+            const registeredStudent = JSON.parse(localStorage.getItem('registeredStudent') || 'null');
+            const currentStudent = JSON.parse(localStorage.getItem('currentStudent') || 'null');
+
+            const toggle = (s) => {
+                if (s && s.id === selectedAdminStudent.id) s.status = nextStatus;
+            };
+            toggle(registeredStudent);
+            toggle(currentStudent);
+
+            if (registeredStudent) localStorage.setItem('registeredStudent', JSON.stringify(registeredStudent));
+            if (currentStudent) localStorage.setItem('currentStudent', JSON.stringify(currentStudent));
+
+            alert(`Student account successfully ${nextStatus === 'Suspended' ? 'suspended' : 'activated'} (Offline fallback).`);
+            selectedAdminStudent.status = nextStatus;
+            
+            const idx = adminCachedStudents.findIndex(s => s.id === selectedAdminStudent.id);
+            if (idx !== -1) adminCachedStudents[idx].status = nextStatus;
+
+            openStudentDetailDrawer(selectedAdminStudent);
+            renderAdminStudentsTable();
+        });
+    });
+
+    // Recharge redirect from inside drawer
+    drawerStudentBtnRecharge?.addEventListener('click', () => {
+        if (selectedAdminStudent) {
+            const student = selectedAdminStudent;
+            closeStudentDetailDrawer();
+            triggerRechargeModal(student);
+        }
+    });
+
+    // Transaction sub-fetching helper
+    const fetchStudentTransactions = (studentId) => {
+        const tbody = document.querySelector('#drawerStudentTxnTable tbody');
+        if (!tbody) return;
+
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--muted); padding: 12px;">Loading transactions...</td></tr>';
+
+        fetch(`/api/admin/students/${studentId}/transactions`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+        .then(res => res.ok ? res.json() : [])
+        .then(txns => {
+            renderStudentTxns(tbody, txns);
+        })
+        .catch(err => {
+            console.warn('API student transactions failed, loading from local audits...', err);
+            
+            // Mock transaction logs filters offline
+            const localTxns = JSON.parse(localStorage.getItem('transactions') || '[]');
+            // Filter txns that match this student (since offline user ID is 1, return matching logs)
+            renderStudentTxns(tbody, localTxns);
+        });
+    };
+
+    const renderStudentTxns = (tbody, txns) => {
+        tbody.innerHTML = '';
+        if (!txns || txns.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--muted); padding: 12px;">No transaction logs found.</td></tr>';
+            return;
+        }
+
+        txns.forEach(txn => {
+            const date = new Date(txn.createdAt || Date.now()).toLocaleDateString('en-GB', {
+                day: 'numeric',
+                month: 'short'
+            });
+
+            const isCredit = txn.type.includes('Refund') || txn.type.includes('Top-up');
+            const sign = isCredit ? '+' : '-';
+            const costColor = isCredit ? '#10b981' : 'var(--text)';
+            const costText = txn.amount > 0 ? `${sign}৳ ${txn.amount.toFixed(2)}` : '0.00';
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="padding: 10px; border-bottom: 1px solid var(--border); color: var(--muted);">${date}</td>
+                <td style="padding: 10px; border-bottom: 1px solid var(--border); font-weight: 600;">${txn.type}</td>
+                <td style="padding: 10px; border-bottom: 1px solid var(--border); text-align: right; font-weight: 700; color: ${costColor};">${costText}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    };
+
 
     // Search trigger
     document.getElementById('studentSearch')?.addEventListener('input', renderAdminStudentsTable);

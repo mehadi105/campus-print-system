@@ -420,6 +420,11 @@ app.post('/api/print-orders', authenticateToken, (req, res) => {
             if (err) return res.status(500).json({ error: 'Database error: ' + err.message });
             if (!user) return res.status(404).json({ error: 'User not found.' });
 
+            // Account status constraint check (SCRUM-62)
+            if (user.status === 'Suspended') {
+                return res.status(403).json({ error: 'Your student account has been suspended by administration. Order blocked.' });
+            }
+
             const totalOrderPages = parsedPages * copies;
 
             if (paymentMethod === 'Quota') {
@@ -787,6 +792,34 @@ app.post('/api/admin/students/:id/adjust', authenticateToken, requireAdmin, (req
 
             res.json({ message: 'Student account adjusted successfully.' });
         });
+    });
+});
+
+// 5.3 Update Student Status (Suspend/Activate) (SCRUM-62)
+app.post('/api/admin/students/:id/status', authenticateToken, requireAdmin, (req, res) => {
+    const studentId = req.params.id;
+    const { status } = req.body; // 'Active' / 'Suspended'
+
+    if (!status) return res.status(400).json({ error: 'Please specify status.' });
+
+    db.get('SELECT * FROM users WHERE id = ? AND role = "Student"', [studentId], (err, user) => {
+        if (err) return res.status(500).json({ error: 'Database error finding student: ' + err.message });
+        if (!user) return res.status(404).json({ error: 'Student not found.' });
+
+        db.run('UPDATE users SET status = ? WHERE id = ?', [status, studentId], (err) => {
+            if (err) return res.status(500).json({ error: 'Database error updating student status: ' + err.message });
+            res.json({ message: `Student status successfully updated to ${status}.` });
+        });
+    });
+});
+
+// 5.6 Get Student Transactions history ledger (SCRUM-62)
+app.get('/api/admin/students/:id/transactions', authenticateToken, requireAdmin, (req, res) => {
+    const studentId = req.params.id;
+
+    db.all('SELECT * FROM transactions WHERE userId = ? ORDER BY createdAt DESC', [studentId], (err, rows) => {
+        if (err) return res.status(500).json({ error: 'Database error fetching transactions: ' + err.message });
+        res.json(rows);
     });
 });
 

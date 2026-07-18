@@ -327,6 +327,90 @@
         </div>
     </div>
 
+    <!-- Student Account Details & Ledger Drawer (SCRUM-62) -->
+    <div id="studentDetailDrawer" class="admin-drawer">
+        <div class="admin-drawer-backdrop" id="closeStudentDrawerBackdrop"></div>
+        <div class="admin-drawer-content" style="width: min(100%, 520px);">
+            <header class="admin-drawer-header">
+                <div>
+                    <span class="eyebrow">Student Account Portal</span>
+                    <h3 id="drawerStudentTitleName">Ava Nguyen</h3>
+                </div>
+                <button type="button" class="drawer-close-btn" id="closeStudentDrawerBtn" aria-label="Close details">✕</button>
+            </header>
+
+            <div class="admin-drawer-scroll-area">
+                <!-- User basic profile info -->
+                <section class="drawer-section">
+                    <h4 class="section-title">Academic Details</h4>
+                    <div class="details-grid-card">
+                        <div class="details-row">
+                            <span class="detail-label">Roll ID:</span>
+                            <strong class="detail-value" id="drawerStudentProfileRoll">4010</strong>
+                        </div>
+                        <div class="details-row">
+                            <span class="detail-label">Department:</span>
+                            <span class="detail-value" id="drawerStudentProfileDept">Computer Science</span>
+                        </div>
+                        <div class="details-row">
+                            <span class="detail-label">Email:</span>
+                            <span class="detail-value" id="drawerStudentProfileEmail">ava.nguyen@univ.edu</span>
+                        </div>
+                        <div class="details-row">
+                            <span class="detail-label">Session &amp; Semester:</span>
+                            <span class="detail-value" id="drawerStudentProfileSession">2022-23 (8th Sem)</span>
+                        </div>
+                        <div class="details-row">
+                            <span class="detail-label">Account Status:</span>
+                            <span class="status-badge completed" id="drawerStudentProfileStatusLabel">Active</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Accounts Balance overview metrics -->
+                <section class="drawer-section">
+                    <h4 class="section-title">Current Printing Quota &amp; Wallet</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 14px; text-align: center;">
+                            <span style="font-size: 0.72rem; color: var(--muted); font-weight: 700; text-transform: uppercase;">Remaining Quota</span>
+                            <h3 id="drawerStudentQuotaPages" style="margin: 4px 0 0 0; font-size: 1.3rem; font-weight: 800; color: var(--text);">76 pages</h3>
+                        </div>
+                        <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 14px; text-align: center;">
+                            <span style="font-size: 0.72rem; color: var(--muted); font-weight: 700; text-transform: uppercase;">Wallet Cash</span>
+                            <h3 id="drawerStudentWalletCash" style="margin: 4px 0 0 0; font-size: 1.3rem; font-weight: 800; color: var(--text);">৳ 1,250.00</h3>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Transaction history logs panel -->
+                <section class="drawer-section">
+                    <h4 class="section-title">Account Transaction History</h4>
+                    <div class="table-wrapper" style="max-height: 250px; overflow-y: auto; border: 1px solid var(--border); border-radius: 12px;">
+                        <table id="drawerStudentTxnTable" style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+                            <thead>
+                                <tr style="background: var(--surface-2); border-bottom: 1px solid var(--border);">
+                                    <th style="padding: 10px; text-align: left;">Date</th>
+                                    <th style="padding: 10px; text-align: left;">Activity Type</th>
+                                    <th style="padding: 10px; text-align: right;">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Dynamic transactions ledger -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <footer class="admin-drawer-footer" style="padding: 24px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; gap: 12px;">
+                    <button type="button" class="save-profile-btn" id="drawerStudentBtnRecharge" style="flex: 1; padding: 12px; font-weight: 700; font-size: 0.85rem; border-radius: 10px;">⚡ Recharge Account</button>
+                    <button type="button" class="printer-btn" id="drawerStudentBtnToggleStatus" style="flex: 1; padding: 12px; font-weight: 700; font-size: 0.85rem; border-radius: 10px; border-color: var(--danger); color: var(--danger); outline: none;">🚫 Suspend Student</button>
+                </div>
+            </footer>
+        </div>
+    </div>
+
     <script src="admin.js"></script>
 </body>
 </html>
