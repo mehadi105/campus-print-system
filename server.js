@@ -270,7 +270,39 @@ app.delete('/api/documents/:id', authenticateToken, (req, res) => {
             message: 'Document deleted successfully from database.'
         });
     });
-});
+});// Helper to parse page range (SCRUM-50)
+function parsePageRangeCount(rangeStr, docPages) {
+    const clean = (rangeStr || '').trim().toLowerCase();
+    if (!clean || clean === 'all') return docPages;
+    
+    let total = 0;
+    const parts = clean.split(',');
+    for (let part of parts) {
+        part = part.trim();
+        if (!part) continue;
+        
+        const rangeMatch = part.match(/^(\d+)-(\d+)$/);
+        if (rangeMatch) {
+            const start = parseInt(rangeMatch[1]);
+            const end = parseInt(rangeMatch[2]);
+            if (start > 0 && end >= start && start <= docPages && end <= docPages) {
+                total += (end - start + 1);
+            } else {
+                return -1;
+            }
+        } else if (/^\d+$/.test(part)) {
+            const single = parseInt(part);
+            if (single > 0 && single <= docPages) {
+                total += 1;
+            } else {
+                return -1;
+            }
+        } else {
+            return -1;
+        }
+    }
+    return total > 0 ? total : -1;
+}
 
 
 // 6. Place Print Order (SCRUM-44)
@@ -282,42 +314,69 @@ app.post('/api/print-orders', authenticateToken, (req, res) => {
         return res.status(400).json({ error: 'Missing required print order fields.' });
     }
 
-    db.get('SELECT * FROM users WHERE id = ?', [userId], (err, user) => {
-        if (err) return res.status(500).json({ error: 'Database error: ' + err.message });
-        if (!user) return res.status(404).json({ error: 'User not found.' });
+    // Secure calculation of print pages and cost from DB (SCRUM-50)
+    db.get('SELECT * FROM documents WHERE id = ?', [documentId], (err, doc) => {
+        if (err) return res.status(500).json({ error: 'Database error fetching document: ' + err.message });
+        const docPages = doc ? doc.pages : 10;
 
-        const totalOrderPages = pages * copies;
-
-        if (paymentMethod === 'Quota') {
-            const quotaLeft = user.totalPages - user.usedPages;
-            if (quotaLeft < totalOrderPages) {
-                return res.status(400).json({ error: 'Insufficient print quota.' });
-            }
-            
-            const newUsedPages = user.usedPages + totalOrderPages;
-            db.run('UPDATE users SET usedPages = ? WHERE id = ?', [newUsedPages, userId], (err) => {
-                if (err) return res.status(500).json({ error: 'Database error updating quota: ' + err.message });
-                savePrintOrder();
-            });
-        } else {
-            if (user.walletBalance < estimatedCost) {
-                return res.status(400).json({ error: 'Insufficient wallet balance.' });
-            }
-
-            const newBalance = user.walletBalance - estimatedCost;
-            db.run('UPDATE users SET walletBalance = ? WHERE id = ?', [newBalance, userId], (err) => {
-                if (err) return res.status(500).json({ error: 'Database error updating wallet: ' + err.message });
-                savePrintOrder();
-            });
+        const parsedPages = parsePageRangeCount(pageRange, docPages);
+        if (parsedPages === -1) {
+            return res.status(400).json({ error: 'Invalid page range specified.' });
         }
 
-        function savePrintOrder() {
-            const sql = `
-                INSERT INTO print_orders (userId, documentId, documentName, copies, colorMode, duplex, orientation, paperSize, pageRange, printerTerminal, estimatedCost, pages, paymentMethod, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')
-            `;
-            db.run(sql, [userId, documentId, documentName, copies, colorMode, duplex, orientation, paperSize, pageRange, printerTerminal, estimatedCost, pages, paymentMethod], function(err) {
-                if (err) return res.status(500).json({ error: 'Database error saving print order: ' + err.message });
+        if (parseInt(pages) !== parsedPages) {
+            return res.status(400).json({ error: 'Page count validation mismatch.' });
+        }
+
+        const isColor = colorMode === 'Color';
+        const isDuplex = duplex === 'Double-Sided';
+        let unitCost = isColor ? (isDuplex ? 4.0 : 5.0) : (isDuplex ? 1.5 : 2.0);
+        if (paperSize === 'Legal') {
+            unitCost += 1.0;
+        }
+
+        const calculatedCost = parsedPages * copies * unitCost;
+        if (Math.abs(parseFloat(estimatedCost) - calculatedCost) > 0.01) {
+            return res.status(400).json({ error: 'Estimated print cost validation mismatch.' });
+        }
+
+        // Validate user balance/quota and execute deductions
+        db.get('SELECT * FROM users WHERE id = ?', [userId], (err, user) => {
+            if (err) return res.status(500).json({ error: 'Database error: ' + err.message });
+            if (!user) return res.status(404).json({ error: 'User not found.' });
+
+            const totalOrderPages = parsedPages * copies;
+
+            if (paymentMethod === 'Quota') {
+                const quotaLeft = user.totalPages - user.usedPages;
+                if (quotaLeft < totalOrderPages) {
+                    return res.status(400).json({ error: 'Insufficient print quota.' });
+                }
+                
+                const newUsedPages = user.usedPages + totalOrderPages;
+                db.run('UPDATE users SET usedPages = ? WHERE id = ?', [newUsedPages, userId], (err) => {
+                    if (err) return res.status(500).json({ error: 'Database error updating quota: ' + err.message });
+                    savePrintOrder();
+                });
+            } else {
+                if (user.walletBalance < calculatedCost) {
+                    return res.status(400).json({ error: 'Insufficient wallet balance.' });
+                }
+
+                const newBalance = user.walletBalance - calculatedCost;
+                db.run('UPDATE users SET walletBalance = ? WHERE id = ?', [newBalance, userId], (err) => {
+                    if (err) return res.status(500).json({ error: 'Database error updating wallet: ' + err.message });
+                    savePrintOrder();
+                });
+            }
+
+            function savePrintOrder() {
+                const sql = `
+                    INSERT INTO print_orders (userId, documentId, documentName, copies, colorMode, duplex, orientation, paperSize, pageRange, printerTerminal, estimatedCost, pages, paymentMethod, status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')
+                `;
+                db.run(sql, [userId, documentId, documentName, copies, colorMode, duplex, orientation, paperSize, pageRange, printerTerminal, calculatedCost, parsedPages, paymentMethod], function(err) {
+                    if (err) return res.status(500).json({ error: 'Database error saving print order: ' + err.message });
                 
                 const printOrderId = this.lastID;
 

@@ -837,6 +837,40 @@ document.addEventListener('DOMContentLoaded', () => {
             updateCostEstimate();
         });
 
+        // Helper to parse page range (SCRUM-50)
+        const parsePageRangeCount = (rangeStr, docPages) => {
+            const clean = rangeStr.trim().toLowerCase();
+            if (!clean || clean === 'all') return docPages;
+            
+            let total = 0;
+            const parts = clean.split(',');
+            for (let part of parts) {
+                part = part.trim();
+                if (!part) continue;
+                
+                const rangeMatch = part.match(/^(\d+)-(\d+)$/);
+                if (rangeMatch) {
+                    const start = parseInt(rangeMatch[1]);
+                    const end = parseInt(rangeMatch[2]);
+                    if (start > 0 && end >= start && start <= docPages && end <= docPages) {
+                        total += (end - start + 1);
+                    } else {
+                        return -1;
+                    }
+                } else if (/^\d+$/.test(part)) {
+                    const single = parseInt(part);
+                    if (single > 0 && single <= docPages) {
+                        total += 1;
+                    } else {
+                        return -1;
+                    }
+                } else {
+                    return -1;
+                }
+            }
+            return total > 0 ? total : -1;
+        };
+
         // Update summary and cost estimation
         const updateCostEstimate = () => {
             if (!selectedDocObj) {
@@ -858,23 +892,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const isColor = colorModeColor.checked;
             const isDuplex = duplexDouble.checked;
 
-            // Page calculation factoring range
-            let printPages = docPages;
-            const rangeVal = printPageRange.value.trim().toLowerCase();
-            if (rangeVal && rangeVal !== 'all') {
-                const match = rangeVal.match(/^(\d+)-(\d+)$/);
-                if (match) {
-                    const start = parseInt(match[1]);
-                    const end = parseInt(match[2]);
-                    if (start > 0 && end >= start && end <= docPages) {
-                        printPages = end - start + 1;
-                    }
-                } else if (/^\d+$/.test(rangeVal)) {
-                    const single = parseInt(rangeVal);
-                    if (single > 0 && single <= docPages) {
-                        printPages = 1;
-                    }
-                }
+            // Page calculation factoring range (SCRUM-50)
+            const rangeVal = printPageRange.value.trim();
+            const printPages = parsePageRangeCount(rangeVal, docPages);
+
+            if (printPages === -1) {
+                summaryDocPages.textContent = `${docPages} page${docPages !== 1 ? 's' : ''}`;
+                summaryTotalPages.textContent = 'Invalid';
+                summaryTotalCost.textContent = '৳ 0.00';
+                const summaryFormula = document.getElementById('summaryFormula');
+                if (summaryFormula) summaryFormula.textContent = '';
+                
+                printValidationWarning.textContent = `⚠️ Invalid page range selection. Use formats like 'All', '5', '1-5', or '1-3, 5, 8-10'. Make sure pages are within 1 to ${docPages}.`;
+                printValidationWarning.style.display = 'block';
+                submitOrderBtn.disabled = true;
+                return;
             }
 
             const totalPagesToPrint = printPages * copies;
@@ -899,6 +931,11 @@ document.addEventListener('DOMContentLoaded', () => {
             summaryTotalPages.textContent = `${totalPagesToPrint} page${totalPagesToPrint !== 1 ? 's' : ''}`;
             summaryUnitCost.textContent = `৳ ${unitCost.toFixed(2)} / page`;
             summaryTotalCost.textContent = `৳ ${estTotalCost.toFixed(2)}`;
+
+            const summaryFormula = document.getElementById('summaryFormula');
+            if (summaryFormula) {
+                summaryFormula.textContent = `(${printPages} pgs × ${copies} cop) × ৳${unitCost.toFixed(2)}`;
+            }
 
             // ── Update Print Preview Visualizer (SCRUM-45) ──
             const previewPaper = document.getElementById('previewPaper');
@@ -1055,22 +1092,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const isColor = colorModeColor.checked;
             const isDuplex = duplexDouble.checked;
             
-            let printPages = docPages;
-            const rangeVal = printPageRange.value.trim().toLowerCase();
-            if (rangeVal && rangeVal !== 'all') {
-                const match = rangeVal.match(/^(\d+)-(\d+)$/);
-                if (match) {
-                    const start = parseInt(match[1]);
-                    const end = parseInt(match[2]);
-                    if (start > 0 && end >= start && end <= docPages) {
-                        printPages = end - start + 1;
-                    }
-                } else if (/^\d+$/.test(rangeVal)) {
-                    const single = parseInt(rangeVal);
-                    if (single > 0 && single <= docPages) {
-                        printPages = 1;
-                    }
-                }
+            const printPages = parsePageRangeCount(printPageRange.value, docPages);
+            if (printPages === -1) {
+                alert("Please enter a valid page range (e.g. 'All', '5', '1-5', or '1-3, 5, 8-10').");
+                return;
             }
 
             const totalPagesToPrint = printPages * copies;
