@@ -1,6 +1,6 @@
 # Campus Printing System
 
-Campus Printing System for university students Ã¢â‚¬â€ submit print jobs, manage documents, and complete campus payments through a shared web application.
+Campus Printing System for university students ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â submit print jobs, manage documents, and complete campus payments through a shared web application.
 
 ## Project Overview
 
@@ -10,7 +10,7 @@ Campus Printing System for university students Ã¢â‚¬â€ submit print j
 | Methodology | Scrum |
 | Sprints | 3 |
 | Stories per sprint | 4 |
-| Branching model | Git FlowÃ¢â‚¬â€œstyle (`main` + `develop` + feature branches) |
+| Branching model | Git FlowÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“style (`main` + `develop` + feature branches) |
 
 **Story 1 (completed):** Login UI, Register UI, Login API, Register API.
 
@@ -20,12 +20,12 @@ Future stories are delivered as Jira subtasks on feature branches merged into `d
 
 ```text
 /
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ frontend/          # Student-facing HTML/CSS (and future UI)
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ backend/           # Express API
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ docs/              # SRS, diagrams, API docs, Git workflow
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ .github/           # PR and issue templates
-Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ README.md
-Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ LICENSE
+ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ frontend/          # Student-facing HTML/CSS (and future UI)
+ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ backend/           # Express API
+ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ docs/              # SRS, diagrams, API docs, Git workflow
+ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ .github/           # PR and issue templates
+ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ README.md
+ÃƒÂ¢Ã¢â‚¬ÂÃ¢â‚¬ÂÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ LICENSE
 ```
 
 ## Tech Stack
@@ -69,7 +69,7 @@ Full guide: [docs/GIT_WORKFLOW.md](docs/GIT_WORKFLOW.md)
 ## Git Workflow
 
 ```text
-feature/*  Ã¢â€ â€™  PR  Ã¢â€ â€™  develop  Ã¢â€ â€™  (sprint end) PR  Ã¢â€ â€™  main  Ã¢â€ â€™  tag (v0.1.0 / v0.2.0 / v1.0.0)
+feature/*  ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢  PR  ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢  develop  ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢  (sprint end) PR  ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢  main  ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢  tag (v0.1.0 / v0.2.0 / v1.0.0)
 ```
 
 - Feature branches start from `develop`.
@@ -99,7 +99,7 @@ git checkout -b feature/<story>-<subtask>
 At the end of each sprint:
 
 1. Test everything on `develop`
-2. Open a PR: `develop` Ã¢â€ â€™ `main`
+2. Open a PR: `develop` ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ `main`
 3. Merge the release PR
 4. Tag on `main`: `v0.1.0`, `v0.2.0`, then `v1.0.0`
 
@@ -146,7 +146,7 @@ test(login): add authentication tests
 
 ## Backend API (Story 1)
 
-### Login Ã¢â‚¬â€ `POST /api/auth/login`
+### Login ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â `POST /api/auth/login`
 
 ```json
 {
@@ -155,7 +155,7 @@ test(login): add authentication tests
 }
 ```
 
-### Register Ã¢â‚¬â€ `POST /api/auth/register`
+### Register ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â `POST /api/auth/register`
 
 ```json
 {
@@ -201,7 +201,7 @@ npm run test:documents
 Body fields aligned with Imtiaj print order UI:
 `studentEmail`, `documentName`, `copies`, `colorMode`, `duplex`, `orientation`, `paperSize`, `pageRange`, `printerTerminal`, `pages`, `paymentMethod`, optional `estimatedCost` / `documentId`.
 
-Cost formula matches SCRUM-50 (B&W/Color Ãƒâ€” duplex Ãƒâ€” Legal surcharge).
+Cost formula matches SCRUM-50 (B&W/Color ÃƒÆ’Ã¢â‚¬â€ duplex ÃƒÆ’Ã¢â‚¬â€ Legal surcharge).
 
 ### Save Order to Database (SCRUM-51)
 
@@ -211,16 +211,23 @@ Orders persist in:
 
 ### Order Status & History APIs (SCRUM-55)
 
-- `GET /api/orders/:id/status` Ã¢â‚¬â€ current status for tracking
-- `GET /api/orders/history?email=student@university.edu` Ã¢â‚¬â€ previous orders
+- `GET /api/orders/:id/status` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â current status for tracking
+- `GET /api/orders/history?email=student@university.edu` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â previous orders
 
 
 ### Admin Order Management APIs (SCRUM-60 / SCRUM-61)
 
-- `GET /api/admin/orders` — view all orders (supports `q`, `status`, `email`)
-- `PATCH /api/admin/orders/:id/status` — update status (Pending/Processing/Completed/Cancelled)
+- `GET /api/admin/orders` â€” view all orders (supports `q`, `status`, `email`)
+- `PATCH /api/admin/orders/:id/status` â€” update status (Pending/Processing/Completed/Cancelled)
+
+
+### User Management APIs (SCRUM-63)
+
+- `GET /api/admin/users?q=` — list/search student accounts
+- `PUT /api/admin/users/:email` — update account fields
+- `DELETE /api/admin/users/:email` — delete account
 
 ## License
 
-ISC Ã¢â‚¬â€ see [LICENSE](LICENSE).
+ISC ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â see [LICENSE](LICENSE).
 
