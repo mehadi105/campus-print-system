@@ -783,6 +783,40 @@ document.addEventListener('DOMContentLoaded', () => {
         // Open modal helpers
         const openPrintOrderModal = (documentId = null) => {
             loadDocDropdown(documentId);
+            
+            // Load and apply default print settings (SCRUM-48 / SCRUM-49)
+            const savedSettings = JSON.parse(localStorage.getItem('printSettings') || 'null');
+            if (savedSettings) {
+                const { defaultPref, defaultTerminal } = savedSettings;
+                if (defaultPref) {
+                    if (defaultPref === 'duplex_bw') {
+                        colorModeBW.checked = true;
+                        duplexDouble.checked = true;
+                    } else if (defaultPref === 'simplex_bw') {
+                        colorModeBW.checked = true;
+                        duplexSingle.checked = true;
+                    } else if (defaultPref === 'duplex_color') {
+                        colorModeColor.checked = true;
+                        duplexDouble.checked = true;
+                    } else if (defaultPref === 'simplex_color') {
+                        colorModeColor.checked = true;
+                        duplexSingle.checked = true;
+                    }
+                }
+                if (defaultTerminal && printTerminal) {
+                    printTerminal.value = defaultTerminal;
+                }
+            }
+
+            // Sync payment radio button active card highlights
+            if (paymentMethodQuota.checked) {
+                paymentOptionQuotaCard?.classList.add('active');
+                paymentOptionWalletCard?.classList.remove('active');
+            } else {
+                paymentOptionQuotaCard?.classList.remove('active');
+                paymentOptionWalletCard?.classList.add('active');
+            }
+
             printOrderModal?.classList.add('open');
         };
 
@@ -1273,7 +1307,42 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Initialize table & library rendering
+        // ── Settings Preferences Form Logic (SCRUM-48 / SCRUM-49) ──
+        const settingsForm = document.getElementById('settingsForm');
+        const defaultPrintPref = document.getElementById('defaultPrintPref');
+        const defaultPrinterTerminal = document.getElementById('defaultPrinterTerminal');
+        const checkNotify = document.getElementById('checkNotify');
+
+        // Load settings to populate settings fields on page load
+        const loadSettingsFields = () => {
+            const savedSettings = JSON.parse(localStorage.getItem('printSettings') || 'null');
+            if (savedSettings) {
+                const { defaultPref, defaultTerminal, notify } = savedSettings;
+                if (defaultPrintPref && defaultPref) {
+                    defaultPrintPref.value = defaultPref;
+                }
+                if (defaultPrinterTerminal && defaultTerminal) {
+                    defaultPrinterTerminal.value = defaultTerminal;
+                }
+                if (checkNotify) {
+                    checkNotify.checked = notify !== false;
+                }
+            }
+        };
+
+        settingsForm?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const defaultPref = defaultPrintPref?.value || 'duplex_bw';
+            const defaultTerminal = defaultPrinterTerminal?.value || 'Central Library - Terminal 1';
+            const notify = checkNotify ? checkNotify.checked : true;
+
+            const printSettings = { defaultPref, defaultTerminal, notify };
+            localStorage.setItem('printSettings', JSON.stringify(printSettings));
+            alert('Default printing preferences saved successfully!');
+        });
+
+        // Initialize table & library rendering, and load settings
+        loadSettingsFields();
         renderDocumentLibrary();
         refreshRecentActivitiesTable();
         refreshTransactionsTable();

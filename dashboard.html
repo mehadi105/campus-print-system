@@ -520,23 +520,23 @@
                             <h3>Workspace Settings</h3>
                         </div>
                     </div>
-                    <form style="display: grid; gap: 20px; max-width: 520px; padding: 12px 6px;">
+                    <form id="settingsForm" style="display: grid; gap: 20px; max-width: 520px; padding: 12px 6px;">
                         <div style="display: grid; gap: 8px;">
                             <label style="font-weight: 600; font-size: 0.95rem; color: var(--text);">Default Print Preferences</label>
-                            <select style="padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); outline: none; font-weight: 600;">
-                                <option>Double-Sided (Duplex) • Black & White</option>
-                                <option>Single-Sided (Simplex) • Black & White</option>
-                                <option>Double-Sided (Duplex) • Color Accent</option>
-                                <option>Single-Sided (Simplex) • Color Accent</option>
+                            <select id="defaultPrintPref" style="padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); outline: none; font-weight: 600;">
+                                <option value="duplex_bw">Double-Sided (Duplex) • Black & White</option>
+                                <option value="simplex_bw">Single-Sided (Simplex) • Black & White</option>
+                                <option value="duplex_color">Double-Sided (Duplex) • Color Accent</option>
+                                <option value="simplex_color">Single-Sided (Simplex) • Color Accent</option>
                             </select>
                         </div>
                         <div style="display: grid; gap: 8px;">
                             <label style="font-weight: 600; font-size: 0.95rem; color: var(--text);">Default Printer Terminal</label>
-                            <select style="padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); outline: none; font-weight: 600;">
-                                <option>Central Library - Terminal 1</option>
-                                <option>Central Library - Terminal 2</option>
-                                <option>Science Annex Hallway - Terminal A</option>
-                                <option>CSE Department Main Lab - Terminal B</option>
+                            <select id="defaultPrinterTerminal" style="padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); outline: none; font-weight: 600;">
+                                <option value="Central Library - Terminal 1">Central Library - Terminal 1</option>
+                                <option value="Central Library - Terminal 2">Central Library - Terminal 2</option>
+                                <option value="Science Annex Hallway - Terminal A">Science Annex Hallway - Terminal A</option>
+                                <option value="CSE Department Main Lab - Terminal B">CSE Department Main Lab - Terminal B</option>
                             </select>
                         </div>
                         <div style="display: flex; gap: 12px; align-items: center; padding: 6px 0;">
