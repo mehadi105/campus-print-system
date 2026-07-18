@@ -61,6 +61,49 @@ function createTables() {
     `, (err) => {
         if (err) console.error('Error creating documents table:', err.message);
     });
+
+    // Create print_orders table (SCRUM-51)
+    db.run(`
+        CREATE TABLE IF NOT EXISTS print_orders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            userId INTEGER,
+            studentEmail TEXT NOT NULL,
+            documentId TEXT,
+            documentName TEXT NOT NULL,
+            copies INTEGER DEFAULT 1,
+            colorMode TEXT DEFAULT 'Black & White',
+            duplex TEXT DEFAULT 'Single-Sided',
+            orientation TEXT DEFAULT 'Portrait',
+            paperSize TEXT DEFAULT 'A4',
+            pageRange TEXT DEFAULT 'All',
+            printerTerminal TEXT NOT NULL,
+            estimatedCost REAL DEFAULT 0.0,
+            pages INTEGER DEFAULT 1,
+            paymentMethod TEXT DEFAULT 'Wallet',
+            status TEXT DEFAULT 'Pending',
+            createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+            updatedAt TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (userId) REFERENCES users (id) ON DELETE SET NULL
+        )
+    `, (err) => {
+        if (err) console.error('Error creating print_orders table:', err.message);
+    });
+
+    // Create payments table (SCRUM-65)
+    db.run(`
+        CREATE TABLE IF NOT EXISTS payments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            studentEmail TEXT NOT NULL,
+            orderId TEXT,
+            amount REAL NOT NULL,
+            method TEXT DEFAULT 'Wallet',
+            status TEXT DEFAULT 'Success',
+            referenceId TEXT UNIQUE NOT NULL,
+            createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    `, (err) => {
+        if (err) console.error('Error creating payments table:', err.message);
+    });
 }
 
 // ── JWT Authentication Middleware ──
@@ -215,6 +258,83 @@ app.delete('/api/documents/:id', authenticateToken, (req, res) => {
             message: 'Document deleted successfully from database.'
         });
     });
+});
+
+// 6. Save print order to database (SCRUM-51)
+app.post('/api/print-orders', authenticateToken, (req, res) => {
+    const {
+        documentId,
+        documentName,
+        copies = 1,
+        colorMode = 'Black & White',
+        duplex = 'Single-Sided',
+        orientation = 'Portrait',
+        paperSize = 'A4',
+        pageRange = 'All',
+        printerTerminal,
+        estimatedCost = 0,
+        pages = 1,
+        paymentMethod = 'Wallet',
+    } = req.body;
+
+    if (!documentName || !printerTerminal) {
+        return res.status(400).json({ error: 'Missing required print order fields.' });
+    }
+
+    const studentEmail = req.user.email;
+    const sql = `
+        INSERT INTO print_orders (
+            userId, studentEmail, documentId, documentName, copies, colorMode, duplex,
+            orientation, paperSize, pageRange, printerTerminal, estimatedCost, pages, paymentMethod, status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')
+    `;
+
+    db.run(
+        sql,
+        [
+            req.user.id,
+            studentEmail,
+            documentId || null,
+            documentName,
+            copies,
+            colorMode,
+            duplex,
+            orientation,
+            paperSize,
+            pageRange,
+            printerTerminal,
+            estimatedCost,
+            pages,
+            paymentMethod,
+        ],
+        function (err) {
+            if (err) {
+                return res.status(500).json({ error: 'Database error saving print order: ' + err.message });
+            }
+            db.get('SELECT * FROM print_orders WHERE id = ?', [this.lastID], (getErr, row) => {
+                if (getErr) {
+                    return res.status(500).json({ error: 'Database error retrieving order: ' + getErr.message });
+                }
+                res.status(201).json({
+                    message: 'Print order saved to database successfully.',
+                    order: row,
+                });
+            });
+        }
+    );
+});
+
+app.get('/api/print-orders', authenticateToken, (req, res) => {
+    db.all(
+        'SELECT * FROM print_orders WHERE userId = ? ORDER BY createdAt DESC',
+        [req.user.id],
+        (err, rows) => {
+            if (err) {
+                return res.status(500).json({ error: 'Database error: ' + err.message });
+            }
+            res.json({ orders: rows });
+        }
+    );
 });
 
 
