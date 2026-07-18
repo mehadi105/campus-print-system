@@ -54,12 +54,64 @@ function createTables() {
             fileName TEXT NOT NULL,
             fileSize TEXT NOT NULL,
             fileUrl TEXT NOT NULL,
+            pages INTEGER DEFAULT 10,
             status TEXT DEFAULT 'Ready to Print',
             uploadedAt TEXT DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (userId) REFERENCES users (id) ON DELETE CASCADE
         )
     `, (err) => {
-        if (err) console.error('Error creating documents table:', err.message);
+        if (err) {
+            console.error('Error creating documents table:', err.message);
+        } else {
+            // Alter documents table to add pages column in case it was created without it
+            db.run('ALTER TABLE documents ADD COLUMN pages INTEGER DEFAULT 10', (alterErr) => {
+                // Ignore error if column already exists
+                if (alterErr && !alterErr.message.includes('duplicate column name')) {
+                    console.warn('Document pages column alter warning:', alterErr.message);
+                }
+            });
+        }
+    });
+
+    // Create print_orders table
+    db.run(`
+        CREATE TABLE IF NOT EXISTS print_orders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            userId INTEGER NOT NULL,
+            documentId INTEGER,
+            documentName TEXT NOT NULL,
+            copies INTEGER DEFAULT 1,
+            colorMode TEXT DEFAULT 'Black & White',
+            duplex TEXT DEFAULT 'Single-Sided',
+            orientation TEXT DEFAULT 'Portrait',
+            paperSize TEXT DEFAULT 'A4',
+            pageRange TEXT DEFAULT 'All',
+            printerTerminal TEXT NOT NULL,
+            estimatedCost REAL DEFAULT 0.0,
+            pages INTEGER DEFAULT 1,
+            paymentMethod TEXT NOT NULL,
+            status TEXT DEFAULT 'Pending',
+            createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (userId) REFERENCES users (id) ON DELETE CASCADE
+        )
+    `, (err) => {
+        if (err) console.error('Error creating print_orders table:', err.message);
+    });
+
+    // Create transactions table
+    db.run(`
+        CREATE TABLE IF NOT EXISTS transactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            userId INTEGER NOT NULL,
+            referenceId TEXT UNIQUE NOT NULL,
+            type TEXT NOT NULL,
+            amount REAL DEFAULT 0.0,
+            status TEXT DEFAULT 'Success',
+            createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (userId) REFERENCES users (id) ON DELETE CASCADE
+        )
+    `, (err) => {
+        if (err) console.error('Error creating transactions table:', err.message);
     });
 }
 
@@ -163,12 +215,15 @@ app.post('/api/documents/upload', authenticateToken, (req, res) => {
     // Default mock URL if not provided
     const url = fileUrl || `uploads/${Date.now()}_${fileName.replace(/\s+/g, '_')}`;
 
+    // Generate random page count between 5 and 45
+    const pages = Math.floor(Math.random() * 41) + 5;
+
     const sql = `
-        INSERT INTO documents (userId, fileName, fileSize, fileUrl)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO documents (userId, fileName, fileSize, fileUrl, pages)
+        VALUES (?, ?, ?, ?, ?)
     `;
 
-    db.run(sql, [userId, fileName, fileSize, url], function (err) {
+    db.run(sql, [userId, fileName, fileSize, url, pages], function (err) {
         if (err) {
             return res.status(500).json({ error: 'Database error: ' + err.message });
         }
@@ -213,6 +268,140 @@ app.delete('/api/documents/:id', authenticateToken, (req, res) => {
         }
         res.json({
             message: 'Document deleted successfully from database.'
+        });
+    });
+});
+
+
+// 6. Place Print Order (SCRUM-44)
+app.post('/api/print-orders', authenticateToken, (req, res) => {
+    const { documentId, documentName, copies, colorMode, duplex, orientation, paperSize, pageRange, printerTerminal, estimatedCost, pages, paymentMethod } = req.body;
+    const userId = req.user.id;
+
+    if (!documentName || !printerTerminal || !paymentMethod) {
+        return res.status(400).json({ error: 'Missing required print order fields.' });
+    }
+
+    db.get('SELECT * FROM users WHERE id = ?', [userId], (err, user) => {
+        if (err) return res.status(500).json({ error: 'Database error: ' + err.message });
+        if (!user) return res.status(404).json({ error: 'User not found.' });
+
+        const totalOrderPages = pages * copies;
+
+        if (paymentMethod === 'Quota') {
+            const quotaLeft = user.totalPages - user.usedPages;
+            if (quotaLeft < totalOrderPages) {
+                return res.status(400).json({ error: 'Insufficient print quota.' });
+            }
+            
+            const newUsedPages = user.usedPages + totalOrderPages;
+            db.run('UPDATE users SET usedPages = ? WHERE id = ?', [newUsedPages, userId], (err) => {
+                if (err) return res.status(500).json({ error: 'Database error updating quota: ' + err.message });
+                savePrintOrder();
+            });
+        } else {
+            if (user.walletBalance < estimatedCost) {
+                return res.status(400).json({ error: 'Insufficient wallet balance.' });
+            }
+
+            const newBalance = user.walletBalance - estimatedCost;
+            db.run('UPDATE users SET walletBalance = ? WHERE id = ?', [newBalance, userId], (err) => {
+                if (err) return res.status(500).json({ error: 'Database error updating wallet: ' + err.message });
+                savePrintOrder();
+            });
+        }
+
+        function savePrintOrder() {
+            const sql = `
+                INSERT INTO print_orders (userId, documentId, documentName, copies, colorMode, duplex, orientation, paperSize, pageRange, printerTerminal, estimatedCost, pages, paymentMethod, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')
+            `;
+            db.run(sql, [userId, documentId, documentName, copies, colorMode, duplex, orientation, paperSize, pageRange, printerTerminal, estimatedCost, pages, paymentMethod], function(err) {
+                if (err) return res.status(500).json({ error: 'Database error saving print order: ' + err.message });
+                
+                const printOrderId = this.lastID;
+
+                if (documentId) {
+                    db.run("UPDATE documents SET status = 'Processing' WHERE id = ?", [documentId]);
+                }
+
+                // Record transaction
+                const txnRef = 'TXN-' + Math.floor(10000 + Math.random() * 90000);
+                const txnType = paymentMethod === 'Quota' ? 'Print Quota Debit' : 'Print Wallet Debit';
+                const txnAmount = paymentMethod === 'Quota' ? 0 : estimatedCost;
+
+                db.run(`
+                    INSERT INTO transactions (userId, referenceId, type, amount, status)
+                    VALUES (?, ?, ?, ?, 'Success')
+                `, [userId, txnRef, txnType, txnAmount], (err) => {
+                    if (err) console.error('Error logging transaction:', err.message);
+                });
+
+                db.get('SELECT * FROM users WHERE id = ?', [userId], (err, updatedUser) => {
+                    if (err) return res.status(500).json({ error: 'Database error: ' + err.message });
+                    const { password: _, ...userWithoutPassword } = updatedUser;
+                    res.status(201).json({
+                        message: 'Print order placed successfully.',
+                        printOrderId,
+                        student: userWithoutPassword
+                    });
+                });
+            });
+        }
+    });
+});
+
+// 7. Get student's print orders
+app.get('/api/print-orders', authenticateToken, (req, res) => {
+    const userId = req.user.id;
+    db.all('SELECT * FROM print_orders WHERE userId = ? ORDER BY createdAt DESC', [userId], (err, rows) => {
+        if (err) return res.status(500).json({ error: 'Database error: ' + err.message });
+        res.json(rows);
+    });
+});
+
+// 8. Get student's transaction history
+app.get('/api/transactions', authenticateToken, (req, res) => {
+    const userId = req.user.id;
+    db.all('SELECT * FROM transactions WHERE userId = ? ORDER BY createdAt DESC', [userId], (err, rows) => {
+        if (err) return res.status(500).json({ error: 'Database error: ' + err.message });
+        res.json(rows);
+    });
+});
+
+// 9. Wallet Top-up (Testing Route)
+app.post('/api/wallet/topup', authenticateToken, (req, res) => {
+    const { amount } = req.body;
+    const userId = req.user.id;
+
+    if (!amount || amount <= 0) {
+        return res.status(400).json({ error: 'Invalid top-up amount.' });
+    }
+
+    db.get('SELECT walletBalance FROM users WHERE id = ?', [userId], (err, user) => {
+        if (err) return res.status(500).json({ error: 'Database error: ' + err.message });
+        if (!user) return res.status(404).json({ error: 'User not found.' });
+
+        const newBalance = user.walletBalance + amount;
+        db.run('UPDATE users SET walletBalance = ? WHERE id = ?', [newBalance, userId], (err) => {
+            if (err) return res.status(500).json({ error: 'Database error: ' + err.message });
+
+            const txnRef = 'TXN-' + Math.floor(10000 + Math.random() * 90000);
+            db.run(`
+                INSERT INTO transactions (userId, referenceId, type, amount, status)
+                VALUES (?, ?, 'Wallet Top-up Credit', ?, 'Success')
+            `, [userId, txnRef, amount], (err) => {
+                if (err) console.error('Error logging transaction:', err.message);
+            });
+
+            db.get('SELECT * FROM users WHERE id = ?', [userId], (err, updatedUser) => {
+                if (err) return res.status(500).json({ error: 'Database error: ' + err.message });
+                const { password: _, ...userWithoutPassword } = updatedUser;
+                res.json({
+                    message: 'Wallet topped up successfully.',
+                    student: userWithoutPassword
+                });
+            });
         });
     });
 });

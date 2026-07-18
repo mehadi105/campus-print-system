@@ -556,7 +556,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
 
                     card.querySelector('.print-file-btn').addEventListener('click', () => {
-                        alert(`Configuring printing parameters for: ${doc.fileName}\n(Directing to Print Order parameters...)`);
+                        openPrintOrderModal(doc.id);
                     });
 
                     grid.appendChild(card);
@@ -568,20 +568,20 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const refreshRecentActivitiesTable = () => {
-            fetch('/api/documents', {
+            fetch('/api/print-orders', {
                 method: 'GET',
                 headers: { 'Authorization': `Bearer ${token}` }
             })
             .then(res => res.ok ? res.json() : [])
-            .then(docs => {
-                const localDocs = JSON.parse(localStorage.getItem('uploadedDocuments') || '[]');
+            .then(orders => {
+                const localOrders = JSON.parse(localStorage.getItem('printOrders') || '[]');
                 
-                const docMap = new Map();
-                localDocs.forEach(d => docMap.set(d.fileName + '_' + d.fileSize, d));
-                docs.forEach(d => docMap.set(d.fileName + '_' + d.fileSize, d));
+                const orderMap = new Map();
+                localOrders.forEach(o => orderMap.set(o.id || o.createdAt, o));
+                orders.forEach(o => orderMap.set(o.id || o.createdAt, o));
                 
-                const mergedDocs = Array.from(docMap.values()).sort((a, b) => {
-                    return new Date(b.uploadedAt) - new Date(a.uploadedAt);
+                const mergedOrders = Array.from(orderMap.values()).sort((a, b) => {
+                    return new Date(b.createdAt) - new Date(a.createdAt);
                 });
 
                 const dashboardTbody = document.querySelector('#dashboard-view .table-wrapper table tbody');
@@ -590,37 +590,86 @@ document.addEventListener('DOMContentLoaded', () => {
                 const populateTable = (tbody, items) => {
                     if (!tbody) return;
                     tbody.innerHTML = '';
-                    items.forEach(doc => {
-                        const date = new Date(doc.uploadedAt || Date.now()).toLocaleDateString('en-GB', {
+                    items.forEach(order => {
+                        const date = new Date(order.createdAt || Date.now()).toLocaleDateString('en-GB', {
                             day: 'numeric',
                             month: 'short',
                             year: 'numeric'
                         });
-                        const pages = Math.floor(Math.random() * 20) + 5;
-                        const cost = pages * 3;
+
+                        const copiesStr = order.copies > 1 ? ` (${order.copies} copies)` : '';
+                        const costDisplay = order.paymentMethod === 'Quota' ? 'Quota' : `৳ ${order.estimatedCost}`;
 
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
-                            <td>${doc.fileName}</td>
+                            <td>
+                                <div>
+                                    <strong style="display: block;">${order.documentName}</strong>
+                                    <small style="color: var(--muted); font-size: 0.76rem;">${order.colorMode} • ${order.duplex} • ${order.paperSize}${copiesStr}</small>
+                                </div>
+                            </td>
                             <td>${date}</td>
-                            <td>${pages}</td>
-                            <td>৳ ${cost}</td>
-                            <td><span class="status-badge processing">${doc.status || 'Ready to Print'}</span></td>
+                            <td>${order.pages * order.copies}</td>
+                            <td>${costDisplay}</td>
+                            <td><span class="status-badge ${order.status.toLowerCase() === 'completed' ? 'completed' : 'processing'}">${order.status || 'Pending'}</span></td>
                         `;
                         tbody.appendChild(tr);
                     });
                 };
 
-                if (mergedDocs.length > 0) {
-                    populateTable(dashboardTbody, mergedDocs);
-                    populateTable(historyTbody, mergedDocs);
+                if (mergedOrders.length > 0) {
+                    populateTable(dashboardTbody, mergedOrders);
+                    populateTable(historyTbody, mergedOrders);
                 } else {
-                    const emptyRow = `<tr><td colspan="5" style="text-align: center; color: var(--muted); padding: 24px;">No activities recorded. Upload a document to start!</td></tr>`;
+                    const emptyRow = `<tr><td colspan="5" style="text-align: center; color: var(--muted); padding: 24px;">No print orders placed yet. Upload files and click Print Now to start!</td></tr>`;
                     if (dashboardTbody) dashboardTbody.innerHTML = emptyRow;
                     if (historyTbody) historyTbody.innerHTML = emptyRow;
                 }
             })
-            .catch(err => console.error('Error loading history:', err));
+            .catch(err => {
+                console.warn('API error loading print orders queue, using local fallback...', err);
+                const localOrders = JSON.parse(localStorage.getItem('printOrders') || '[]');
+                const dashboardTbody = document.querySelector('#dashboard-view .table-wrapper table tbody');
+                const historyTbody = document.querySelector('#history-view .table-wrapper table tbody');
+
+                const populateTable = (tbody, items) => {
+                    if (!tbody) return;
+                    tbody.innerHTML = '';
+                    items.forEach(order => {
+                        const date = new Date(order.createdAt || Date.now()).toLocaleDateString('en-GB', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric'
+                        });
+                        const copiesStr = order.copies > 1 ? ` (${order.copies} copies)` : '';
+                        const costDisplay = order.paymentMethod === 'Quota' ? 'Quota' : `৳ ${order.estimatedCost}`;
+
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>
+                                <div>
+                                    <strong style="display: block;">${order.documentName}</strong>
+                                    <small style="color: var(--muted); font-size: 0.76rem;">${order.colorMode} • ${order.duplex} • ${order.paperSize}${copiesStr}</small>
+                                </div>
+                            </td>
+                            <td>${date}</td>
+                            <td>${order.pages * order.copies}</td>
+                            <td>${costDisplay}</td>
+                            <td><span class="status-badge processing">${order.status || 'Pending'}</span></td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                };
+
+                if (localOrders.length > 0) {
+                    populateTable(dashboardTbody, localOrders);
+                    populateTable(historyTbody, localOrders);
+                } else {
+                    const emptyRow = `<tr><td colspan="5" style="text-align: center; color: var(--muted); padding: 24px;">No print orders placed yet. Upload files and click Print Now to start!</td></tr>`;
+                    if (dashboardTbody) dashboardTbody.innerHTML = emptyRow;
+                    if (historyTbody) historyTbody.innerHTML = emptyRow;
+                }
+            });
         };
 
         // Wire existing delete buttons
@@ -631,8 +680,528 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
+        // ── Print Order Modal Logic (SCRUM-44) ──
+        const printOrderModal = document.getElementById('printOrderModal');
+        const printOrderForm = document.getElementById('printOrderForm');
+        const printDocSelect = document.getElementById('printDocSelect');
+        const printCopies = document.getElementById('printCopies');
+        const printPaperSize = document.getElementById('printPaperSize');
+        const printOrientation = document.getElementById('printOrientation');
+        const printPageRange = document.getElementById('printPageRange');
+        const printTerminal = document.getElementById('printTerminal');
+        const colorModeBW = document.getElementById('colorModeBW');
+        const colorModeColor = document.getElementById('colorModeColor');
+        const duplexSingle = document.getElementById('duplexSingle');
+        const duplexDouble = document.getElementById('duplexDouble');
+
+        const summaryDocPages = document.getElementById('summaryDocPages');
+        const summaryTotalPages = document.getElementById('summaryTotalPages');
+        const summaryUnitCost = document.getElementById('summaryUnitCost');
+        const summaryTotalCost = document.getElementById('summaryTotalCost');
+
+        const paymentMethodQuota = document.getElementById('paymentMethodQuota');
+        const paymentMethodWallet = document.getElementById('paymentMethodWallet');
+        const quotaLimitLabel = document.getElementById('quotaLimitLabel');
+        const walletBalanceLabel = document.getElementById('walletBalanceLabel');
+        const paymentOptionQuotaCard = document.getElementById('paymentOptionQuotaCard');
+        const paymentOptionWalletCard = document.getElementById('paymentOptionWalletCard');
+
+        const printValidationWarning = document.getElementById('printValidationWarning');
+        const submitOrderBtn = document.getElementById('submitOrderBtn');
+        const closePrintModalBtn = document.getElementById('closePrintModalBtn');
+        const cancelPrintBtn = document.getElementById('cancelPrintBtn');
+
+        let allDocumentsList = [];
+        let selectedDocObj = null;
+
+        // Fetch documents to populate select list
+        const loadDocDropdown = (selectedDocId = null) => {
+            fetch('/api/documents', {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(res => res.ok ? res.json() : [])
+            .then(docs => {
+                const localDocs = JSON.parse(localStorage.getItem('uploadedDocuments') || '[]');
+                const docMap = new Map();
+                localDocs.forEach(d => docMap.set(d.id, d));
+                docs.forEach(d => docMap.set(d.id, d));
+                allDocumentsList = Array.from(docMap.values());
+
+                if (printDocSelect) {
+                    printDocSelect.innerHTML = '';
+                    if (allDocumentsList.length === 0) {
+                        printDocSelect.innerHTML = '<option value="">-- No documents uploaded yet 📂 --</option>';
+                        selectedDocObj = null;
+                        updateCostEstimate();
+                        return;
+                    }
+                    
+                    allDocumentsList.forEach(doc => {
+                        const opt = document.createElement('option');
+                        opt.value = doc.id;
+                        opt.textContent = `${doc.fileName} (${doc.pages || 10} pages)`;
+                        if (String(doc.id) === String(selectedDocId)) {
+                            opt.selected = true;
+                        }
+                        printDocSelect.appendChild(opt);
+                    });
+
+                    const selectedId = printDocSelect.value;
+                    selectedDocObj = allDocumentsList.find(d => String(d.id) === String(selectedId));
+                    updateCostEstimate();
+                }
+            })
+            .catch(err => {
+                console.warn('API error loading documents dropdown, using local fallback...', err);
+                const localDocs = JSON.parse(localStorage.getItem('uploadedDocuments') || '[]');
+                allDocumentsList = localDocs;
+                if (printDocSelect) {
+                    printDocSelect.innerHTML = '';
+                    if (allDocumentsList.length === 0) {
+                        printDocSelect.innerHTML = '<option value="">-- No documents uploaded yet 📂 --</option>';
+                        selectedDocObj = null;
+                        updateCostEstimate();
+                        return;
+                    }
+                    allDocumentsList.forEach(doc => {
+                        const opt = document.createElement('option');
+                        opt.value = doc.id;
+                        opt.textContent = `${doc.fileName} (${doc.pages || 10} pages)`;
+                        if (String(doc.id) === String(selectedDocId)) {
+                            opt.selected = true;
+                        }
+                        printDocSelect.appendChild(opt);
+                    });
+                    const selectedId = printDocSelect.value;
+                    selectedDocObj = allDocumentsList.find(d => String(d.id) === String(selectedId));
+                    updateCostEstimate();
+                }
+            });
+        };
+
+        // Open modal helpers
+        const openPrintOrderModal = (documentId = null) => {
+            loadDocDropdown(documentId);
+            printOrderModal?.classList.add('open');
+        };
+
+        const closePrintModal = () => {
+            printOrderModal?.classList.remove('open');
+        };
+
+        closePrintModalBtn?.addEventListener('click', closePrintModal);
+        cancelPrintBtn?.addEventListener('click', closePrintModal);
+        printOrderModal?.addEventListener('click', (e) => {
+            if (e.target === printOrderModal) closePrintModal();
+        });
+
+        // Trigger on selecting another document in dropdown
+        printDocSelect?.addEventListener('change', () => {
+            const selectedId = printDocSelect.value;
+            selectedDocObj = allDocumentsList.find(d => String(d.id) === String(selectedId));
+            updateCostEstimate();
+        });
+
+        // Update summary and cost estimation
+        const updateCostEstimate = () => {
+            if (!selectedDocObj) {
+                summaryDocPages.textContent = '-- pages';
+                summaryTotalPages.textContent = '-- pages';
+                summaryTotalCost.textContent = '৳ 0.00';
+                submitOrderBtn.disabled = true;
+                return;
+            }
+
+            const docPages = selectedDocObj.pages || 10;
+            const copies = parseInt(printCopies.value) || 1;
+            const isColor = colorModeColor.checked;
+            const isDuplex = duplexDouble.checked;
+
+            // Page calculation factoring range
+            let printPages = docPages;
+            const rangeVal = printPageRange.value.trim().toLowerCase();
+            if (rangeVal && rangeVal !== 'all') {
+                const match = rangeVal.match(/^(\d+)-(\d+)$/);
+                if (match) {
+                    const start = parseInt(match[1]);
+                    const end = parseInt(match[2]);
+                    if (start > 0 && end >= start && end <= docPages) {
+                        printPages = end - start + 1;
+                    }
+                } else if (/^\d+$/.test(rangeVal)) {
+                    const single = parseInt(rangeVal);
+                    if (single > 0 && single <= docPages) {
+                        printPages = 1;
+                    }
+                }
+            }
+
+            const totalPagesToPrint = printPages * copies;
+
+            // Unit pricing
+            let unitCost = 2.0; // B&W Simplex
+            if (isColor) {
+                unitCost = isDuplex ? 4.0 : 5.0;
+            } else {
+                unitCost = isDuplex ? 1.5 : 2.0;
+            }
+
+            const estTotalCost = totalPagesToPrint * unitCost;
+
+            // Update DOM fields
+            summaryDocPages.textContent = `${docPages} page${docPages !== 1 ? 's' : ''}`;
+            summaryTotalPages.textContent = `${totalPagesToPrint} page${totalPagesToPrint !== 1 ? 's' : ''}`;
+            summaryUnitCost.textContent = `৳ ${unitCost.toFixed(2)} / page`;
+            summaryTotalCost.textContent = `৳ ${estTotalCost.toFixed(2)}`;
+
+            // Sync user data for budget validations
+            const student = JSON.parse(localStorage.getItem('currentStudent') || 'null');
+            if (student) {
+                const walletBal = student.walletBalance || 0;
+                const quotaLeft = Math.max((student.totalPages || 100) - (student.usedPages || 50), 0);
+
+                quotaLimitLabel.textContent = `Left: ${quotaLeft} pages`;
+                walletBalanceLabel.textContent = `Bal: ৳ ${walletBal.toFixed(2)}`;
+
+                let validationPass = true;
+                if (paymentMethodQuota.checked) {
+                    if (quotaLeft < totalPagesToPrint) {
+                        validationPass = false;
+                        printValidationWarning.textContent = `⚠️ Insufficient print quota. You need ${totalPagesToPrint} free pages, but only have ${quotaLeft} left.`;
+                        printValidationWarning.style.display = 'block';
+                    } else {
+                        printValidationWarning.style.display = 'none';
+                    }
+                } else {
+                    if (walletBal < estTotalCost) {
+                        validationPass = false;
+                        printValidationWarning.textContent = `⚠️ Insufficient wallet balance. You need ৳ ${estTotalCost.toFixed(2)}, but only have ৳ ${walletBal.toFixed(2)}.`;
+                        printValidationWarning.style.display = 'block';
+                    } else {
+                        printValidationWarning.style.display = 'none';
+                    }
+                }
+
+                submitOrderBtn.disabled = !validationPass;
+            }
+        };
+
+        // Inputs triggering recalculation
+        [printCopies, printPageRange].forEach(input => {
+            input?.addEventListener('input', updateCostEstimate);
+        });
+
+        [printPaperSize, printOrientation, printTerminal].forEach(select => {
+            select?.addEventListener('change', updateCostEstimate);
+        });
+
+        [colorModeBW, colorModeColor, duplexSingle, duplexDouble, paymentMethodQuota, paymentMethodWallet].forEach(radio => {
+            radio?.addEventListener('change', (e) => {
+                // Style payment selection cards active states
+                if (paymentMethodQuota.checked) {
+                    paymentOptionQuotaCard?.classList.add('active');
+                    paymentOptionWalletCard?.classList.remove('active');
+                } else {
+                    paymentOptionQuotaCard?.classList.remove('active');
+                    paymentOptionWalletCard?.classList.add('active');
+                }
+                updateCostEstimate();
+            });
+        });
+
+        // Submit Print Order handler
+        printOrderForm?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!selectedDocObj) return;
+
+            const docPages = selectedDocObj.pages || 10;
+            const copies = parseInt(printCopies.value) || 1;
+            const isColor = colorModeColor.checked;
+            const isDuplex = duplexDouble.checked;
+            
+            let printPages = docPages;
+            const rangeVal = printPageRange.value.trim().toLowerCase();
+            if (rangeVal && rangeVal !== 'all') {
+                const match = rangeVal.match(/^(\d+)-(\d+)$/);
+                if (match) {
+                    const start = parseInt(match[1]);
+                    const end = parseInt(match[2]);
+                    if (start > 0 && end >= start && end <= docPages) {
+                        printPages = end - start + 1;
+                    }
+                } else if (/^\d+$/.test(rangeVal)) {
+                    const single = parseInt(rangeVal);
+                    if (single > 0 && single <= docPages) {
+                        printPages = 1;
+                    }
+                }
+            }
+
+            const totalPagesToPrint = printPages * copies;
+            let unitCost = isColor ? (isDuplex ? 4.0 : 5.0) : (isDuplex ? 1.5 : 2.0);
+            const estTotalCost = totalPagesToPrint * unitCost;
+
+            const orderData = {
+                documentId: selectedDocObj.id,
+                documentName: selectedDocObj.fileName,
+                copies: copies,
+                colorMode: isColor ? 'Color' : 'Black & White',
+                duplex: isDuplex ? 'Double-Sided' : 'Single-Sided',
+                orientation: printOrientation.value,
+                paperSize: printPaperSize.value,
+                pageRange: printPageRange.value,
+                printerTerminal: printTerminal.value,
+                estimatedCost: estTotalCost,
+                pages: printPages,
+                paymentMethod: paymentMethodQuota.checked ? 'Quota' : 'Wallet'
+            };
+
+            fetch('/api/print-orders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(orderData)
+            })
+            .then(res => {
+                if (!res.ok) return res.json().then(j => { throw new Error(j.error || 'Server rejected order') });
+                return res.json();
+            })
+            .then(data => {
+                // Sync profile data and update displays
+                localStorage.setItem('currentStudent', JSON.stringify(data.student));
+                
+                // Sync globally in profile.js
+                if (window.syncProfileDisplay) {
+                    window.syncProfileDisplay(data.student);
+                } else if (typeof renderStudentData === 'function') {
+                    renderStudentData(data.student);
+                }
+
+                alert('Print job submitted successfully! Sent to terminal queue.');
+                closePrintModal();
+                refreshRecentActivitiesTable();
+                refreshTransactionsTable();
+                renderDocumentLibrary(); // Refresh doc library statuses
+            })
+            .catch(err => {
+                console.warn('API print order failed, running local fallback...', err);
+                
+                const student = JSON.parse(localStorage.getItem('currentStudent') || 'null');
+                if (!student) return;
+
+                // Local offline deduction
+                if (paymentMethodQuota.checked) {
+                    student.usedPages = (student.usedPages || 50) + totalPagesToPrint;
+                } else {
+                    student.walletBalance = (student.walletBalance || 1250) - estTotalCost;
+                }
+
+                localStorage.setItem('currentStudent', JSON.stringify(student));
+                if (typeof renderStudentData === 'function') {
+                    renderStudentData(student);
+                }
+
+                const localOrder = {
+                    id: 'ord_' + Date.now(),
+                    userId: student.id,
+                    documentName: orderData.documentName,
+                    copies: orderData.copies,
+                    colorMode: orderData.colorMode,
+                    duplex: orderData.duplex,
+                    orientation: orderData.orientation,
+                    paperSize: orderData.paperSize,
+                    pageRange: orderData.pageRange,
+                    printerTerminal: orderData.printerTerminal,
+                    estimatedCost: orderData.estimatedCost,
+                    pages: orderData.pages,
+                    paymentMethod: orderData.paymentMethod,
+                    status: 'Pending',
+                    createdAt: new Date().toISOString()
+                };
+
+                const localOrders = JSON.parse(localStorage.getItem('printOrders') || '[]');
+                localOrders.unshift(localOrder);
+                localStorage.setItem('printOrders', JSON.stringify(localOrders));
+
+                const localTxn = {
+                    id: 'txn_' + Date.now(),
+                    referenceId: 'TXN-' + Math.floor(10000 + Math.random() * 90000),
+                    type: orderData.paymentMethod === 'Quota' ? 'Print Quota Debit' : 'Print Wallet Debit',
+                    amount: orderData.paymentMethod === 'Quota' ? 0 : estTotalCost,
+                    status: 'Success',
+                    createdAt: new Date().toISOString()
+                };
+
+                const localTxns = JSON.parse(localStorage.getItem('transactions') || '[]');
+                localTxns.unshift(localTxn);
+                localStorage.setItem('transactions', JSON.stringify(localTxns));
+
+                alert('Print order submitted successfully (Offline mode).');
+                closePrintModal();
+                refreshRecentActivitiesTable();
+                refreshTransactionsTable();
+                renderDocumentLibrary();
+            });
+        });
+
+        // Topbar "＋ Create New Print" listener
+        const topbarCreateBtn = document.querySelector('.topbar-actions .create-btn');
+        topbarCreateBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            openPrintOrderModal();
+        });
+
+        // Sidebar "New Print Request" navigation adjustment or button
+        const submitPrintBtn = document.querySelector('.submit-print-btn');
+        submitPrintBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            openPrintOrderModal();
+        });
+
+        // ── Transactions Table Rendering ──
+        const refreshTransactionsTable = () => {
+            const tableBody = document.querySelector('#billing-view .table-wrapper table tbody');
+            if (!tableBody) return;
+
+            fetch('/api/transactions', {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(res => res.ok ? res.json() : [])
+            .then(txns => {
+                const localTxns = JSON.parse(localStorage.getItem('transactions') || '[]');
+                const txnMap = new Map();
+                localTxns.forEach(t => txnMap.set(t.referenceId, t));
+                txns.forEach(t => txnMap.set(t.referenceId, t));
+
+                const mergedTxns = Array.from(txnMap.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+                tableBody.innerHTML = '';
+                if (mergedTxns.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--muted); padding: 20px;">No transactions recorded.</td></tr>`;
+                    return;
+                }
+
+                mergedTxns.forEach(txn => {
+                    const dateStr = new Date(txn.createdAt).toLocaleDateString('en-GB', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                    });
+
+                    const isCredit = txn.type.toLowerCase().includes('credit') || txn.type.toLowerCase().includes('top-up');
+                    const amtStyle = isCredit ? 'color: var(--success); font-weight: 600;' : 'color: var(--danger); font-weight: 600;';
+                    const amtSign = isCredit ? '+' : '-';
+                    const amtLabel = txn.amount === 0 ? 'Quota' : `${amtSign} ৳ ${txn.amount}`;
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${txn.referenceId}</td>
+                        <td>${dateStr}</td>
+                        <td>${txn.type}</td>
+                        <td style="${amtStyle}">${amtLabel}</td>
+                        <td><span class="status-badge completed">${txn.status}</span></td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+            })
+            .catch(err => {
+                console.warn('API error loading transactions, using local fallback...', err);
+                const localTxns = JSON.parse(localStorage.getItem('transactions') || '[]');
+                tableBody.innerHTML = '';
+                if (localTxns.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--muted); padding: 20px;">No transactions recorded.</td></tr>`;
+                    return;
+                }
+                localTxns.forEach(txn => {
+                    const dateStr = new Date(txn.createdAt).toLocaleDateString('en-GB', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                    });
+                    const isCredit = txn.type.includes('Credit') || txn.type.includes('Top-up');
+                    const amtStyle = isCredit ? 'color: var(--success); font-weight: 600;' : 'color: var(--danger); font-weight: 600;';
+                    const amtSign = isCredit ? '+' : '-';
+                    const amtLabel = txn.amount === 0 ? 'Quota' : `${amtSign} ৳ ${txn.amount}`;
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${txn.referenceId}</td>
+                        <td>${dateStr}</td>
+                        <td>${txn.type}</td>
+                        <td style="${amtStyle}">${amtLabel}</td>
+                        <td><span class="status-badge completed">${txn.status}</span></td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+            });
+        };
+
+        // ── Top-up Wallet Logic ──
+        const topupWalletBtn = document.getElementById('topupWalletBtn');
+        topupWalletBtn?.addEventListener('click', () => {
+            const amtStr = prompt('Enter the amount in Taka to top up (e.g. 500):');
+            if (!amtStr) return;
+            const amt = parseFloat(amtStr);
+            if (isNaN(amt) || amt <= 0) {
+                alert('Please enter a valid positive number.');
+                return;
+            }
+
+            fetch('/api/wallet/topup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ amount: amt })
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('Top-up server error');
+                return res.json();
+            })
+            .then(data => {
+                localStorage.setItem('currentStudent', JSON.stringify(data.student));
+                if (typeof renderStudentData === 'function') {
+                    renderStudentData(data.student);
+                }
+                alert(`Successfully topped up ৳ ${amt}!`);
+                refreshTransactionsTable();
+            })
+            .catch(err => {
+                console.warn('API top-up failed, running local fallback...', err);
+                const student = JSON.parse(localStorage.getItem('currentStudent') || 'null');
+                if (student) {
+                    student.walletBalance = (student.walletBalance || 1250) + amt;
+                    localStorage.setItem('currentStudent', JSON.stringify(student));
+                    if (typeof renderStudentData === 'function') {
+                        renderStudentData(student);
+                    }
+
+                    const localTxn = {
+                        id: 'txn_' + Date.now(),
+                        referenceId: 'TXN-' + Math.floor(10000 + Math.random() * 90000),
+                        type: 'Wallet Top-up Credit',
+                        amount: amt,
+                        status: 'Success',
+                        createdAt: new Date().toISOString()
+                    };
+                    const localTxns = JSON.parse(localStorage.getItem('transactions') || '[]');
+                    localTxns.unshift(localTxn);
+                    localStorage.setItem('transactions', JSON.stringify(localTxns));
+
+                    alert(`Successfully topped up ৳ ${amt} (Offline fallback).`);
+                    refreshTransactionsTable();
+                }
+            });
+        });
+
         // Initialize table & library rendering
         renderDocumentLibrary();
         refreshRecentActivitiesTable();
+        refreshTransactionsTable();
     }
 });

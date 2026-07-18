@@ -431,12 +431,15 @@
                 <div class="billing-grid">
                     <div class="billing-main">
                         <section class="stats-grid" style="grid-template-columns: 1fr; margin-bottom: 20px;">
-                            <article class="stat-card accent-blue" style="padding: 24px;">
-                                <div class="stat-icon" style="width: 60px; height: 60px; font-size: 1.8rem;">💰</div>
-                                <div>
-                                    <p class="stat-label" style="font-size: 0.95rem; margin-bottom: 6px;">Available Balance</p>
-                                    <h2 id="wallet-balance-billing" style="font-size: 2.2rem; font-weight: 800; color: var(--text); margin: 0;">৳ 1,250</h2>
+                            <article class="stat-card accent-blue" style="padding: 24px; display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                <div style="display: flex; align-items: center; gap: 14px;">
+                                    <div class="stat-icon" style="width: 60px; height: 60px; font-size: 1.8rem;">💰</div>
+                                    <div>
+                                        <p class="stat-label" style="font-size: 0.95rem; margin-bottom: 6px;">Available Balance</p>
+                                        <h2 id="wallet-balance-billing" style="font-size: 2.2rem; font-weight: 800; color: var(--text); margin: 0;">৳ 1,250</h2>
+                                    </div>
                                 </div>
+                                <button type="button" class="create-btn" id="topupWalletBtn" style="padding: 10px 20px; font-size: 0.9rem;">＋ Top-up Wallet</button>
                             </article>
                         </section>
 
@@ -624,6 +627,149 @@
                     </div>
                 </form>
             </div>
+        </div>
+    </div>
+
+    <!-- Premium Print Order Modal (SCRUM-44) -->
+    <div class="modal-backdrop" id="printOrderModal">
+        <div class="modal-card modal-card-print">
+            <header class="modal-header">
+                <div>
+                    <p class="eyebrow">Configure Print Job</p>
+                    <h3>Place Print Order</h3>
+                </div>
+                <button type="button" class="modal-close" id="closePrintModalBtn" aria-label="Close modal">✕</button>
+            </header>
+
+            <form id="printOrderForm" class="print-order-form">
+                <div class="print-modal-layout">
+                    <!-- Left: Print Preferences Form -->
+                    <div class="print-modal-form-side">
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label for="printDocSelect" style="font-weight: 700; font-size: 0.82rem; color: var(--muted); display: block; margin-bottom: 6px;">Selected Document</label>
+                            <select id="printDocSelect" required class="form-control">
+                                <!-- Options will be dynamically populated -->
+                            </select>
+                        </div>
+                        
+                        <div class="form-grid-2" style="margin-bottom: 12px;">
+                            <div class="form-group">
+                                <label for="printCopies" style="font-weight: 700; font-size: 0.82rem; color: var(--muted); display: block; margin-bottom: 6px;">Number of Copies</label>
+                                <input type="number" id="printCopies" min="1" max="99" value="1" required class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="printPaperSize" style="font-weight: 700; font-size: 0.82rem; color: var(--muted); display: block; margin-bottom: 6px;">Paper Size</label>
+                                <select id="printPaperSize" required class="form-control">
+                                    <option value="A4">A4 (Standard)</option>
+                                    <option value="Letter">Letter</option>
+                                    <option value="Legal">Legal</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-grid-2" style="margin-bottom: 12px;">
+                            <div class="form-group">
+                                <label style="font-weight: 700; font-size: 0.82rem; color: var(--muted); display: block; margin-bottom: 6px;">Color Mode</label>
+                                <div class="segmented-control">
+                                    <input type="radio" id="colorModeBW" name="printColorMode" value="Black & White" checked>
+                                    <label for="colorModeBW">B&W</label>
+                                    <input type="radio" id="colorModeColor" name="printColorMode" value="Color">
+                                    <label for="colorModeColor">Color</label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label style="font-weight: 700; font-size: 0.82rem; color: var(--muted); display: block; margin-bottom: 6px;">Layout (Sides)</label>
+                                <div class="segmented-control">
+                                    <input type="radio" id="duplexSingle" name="printDuplex" value="Single-Sided" checked>
+                                    <label for="duplexSingle">Simplex</label>
+                                    <input type="radio" id="duplexDouble" name="printDuplex" value="Double-Sided">
+                                    <label for="duplexDouble">Duplex</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-grid-2" style="margin-bottom: 12px;">
+                            <div class="form-group">
+                                <label for="printOrientation" style="font-weight: 700; font-size: 0.82rem; color: var(--muted); display: block; margin-bottom: 6px;">Orientation</label>
+                                <select id="printOrientation" required class="form-control">
+                                    <option value="Portrait">Portrait</option>
+                                    <option value="Landscape">Landscape</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="printPageRange" style="font-weight: 700; font-size: 0.82rem; color: var(--muted); display: block; margin-bottom: 6px;">Page Range</label>
+                                <input type="text" id="printPageRange" placeholder="e.g. All, 1-5" value="All" required class="form-control">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="printTerminal" style="font-weight: 700; font-size: 0.82rem; color: var(--muted); display: block; margin-bottom: 6px;">Printer Terminal</label>
+                            <select id="printTerminal" required class="form-control">
+                                <option value="Central Library - Terminal 1">Central Library - Terminal 1</option>
+                                <option value="Central Library - Terminal 2">Central Library - Terminal 2</option>
+                                <option value="Science Annex Hallway - Terminal A">Science Annex Hallway - Terminal A</option>
+                                <option value="CSE Department Main Lab - Terminal B">CSE Department Main Lab - Terminal B</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Right: Cost Summary & Wallet Validation -->
+                    <div class="print-modal-summary-side">
+                        <div class="summary-card-inner">
+                            <h4>Print Order Summary</h4>
+                            
+                            <div class="summary-details">
+                                <div class="summary-row">
+                                    <span>Document Pages:</span>
+                                    <strong id="summaryDocPages">-- pages</strong>
+                                </div>
+                                <div class="summary-row">
+                                    <span>Total Print Pages:</span>
+                                    <strong id="summaryTotalPages">-- pages</strong>
+                                </div>
+                                <div class="summary-row">
+                                    <span>Unit Cost:</span>
+                                    <strong id="summaryUnitCost">৳ 2.00 / page</strong>
+                                </div>
+                                <hr class="summary-divider">
+                                <div class="summary-row highlight">
+                                    <span>Estimated Cost:</span>
+                                    <strong id="summaryTotalCost" class="cost-highlight">৳ 0.00</strong>
+                                </div>
+                            </div>
+
+                            <div class="payment-method-section">
+                                <h5>Payment Method</h5>
+                                <div class="payment-options">
+                                    <label class="payment-option-card" id="paymentOptionQuotaCard">
+                                        <input type="radio" id="paymentMethodQuota" name="paymentMethod" value="Quota" checked>
+                                        <div class="payment-option-content">
+                                            <span class="option-title">Free Quota</span>
+                                            <span class="option-desc" id="quotaLimitLabel">Left: -- pages</span>
+                                        </div>
+                                    </label>
+                                    <label class="payment-option-card" id="paymentOptionWalletCard">
+                                        <input type="radio" id="paymentMethodWallet" name="paymentMethod" value="Wallet">
+                                        <div class="payment-option-content">
+                                            <span class="option-title">Wallet</span>
+                                            <span class="option-desc" id="walletBalanceLabel">Bal: ৳ 0</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div id="printValidationWarning" class="validation-warning" style="display: none; margin-top: 8px;">
+                                ⚠️ Insufficient quota or balance.
+                            </div>
+
+                            <div class="modal-actions-print" style="margin-top: 16px;">
+                                <button type="button" class="secondary-btn" id="cancelPrintBtn">Cancel</button>
+                                <button type="submit" class="save-profile-btn" id="submitOrderBtn">Place Print Order</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 
