@@ -132,10 +132,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const tbody = document.querySelector('#adminQueueTable tbody');
         if (!tbody) return;
 
+        const searchQuery = (document.getElementById('queueSearch')?.value || '').trim().toLowerCase();
         const terminalFilter = document.getElementById('queueFilterTerminal')?.value || 'All';
         const statusFilter = document.getElementById('queueFilterStatus')?.value || 'All';
 
         const filtered = adminCachedOrders.filter(order => {
+            // Search query matches student name, roll ID, or filename
+            const queryMatch = order.documentName.toLowerCase().includes(searchQuery) ||
+                               (order.referenceId && order.referenceId.toLowerCase().includes(searchQuery)) ||
+                               (order.fullName && order.fullName.toLowerCase().includes(searchQuery)) ||
+                               (order.rollId && order.rollId.toLowerCase().includes(searchQuery));
+
             // Terminal filter
             let terminalPass = terminalFilter === 'All' || order.printerTerminal === terminalFilter;
             
@@ -154,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            return terminalPass && statusPass;
+            return queryMatch && terminalPass && statusPass;
         });
 
         tbody.innerHTML = '';
@@ -181,6 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (status.toLowerCase() === 'cancelled' || status.toLowerCase() === 'rejected') statusClass = 'cancelled';
 
             const tr = document.createElement('tr');
+            tr.style.cursor = 'pointer';
             tr.innerHTML = `
                 <td>
                     <div>
@@ -204,6 +212,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 </td>
             `;
 
+            // Row click listener to open drawer
+            tr.addEventListener('click', () => openAdminOrderDrawer(order));
+
             const actionCell = tr.querySelector(`#actions-${CSS.escape(order.id || order.createdAt)}`);
             if (actionCell) {
                 const normalizedStatus = status.toLowerCase();
@@ -211,12 +222,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     const btnProcess = document.createElement('button');
                     btnProcess.className = 'admin-btn btn-process';
                     btnProcess.textContent = 'Process';
-                    btnProcess.addEventListener('click', () => updateJobStatus(order.id || order.createdAt, 'Processing'));
+                    btnProcess.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        updateJobStatus(order.id || order.createdAt, 'Processing');
+                    });
 
                     const btnReject = document.createElement('button');
                     btnReject.className = 'admin-btn btn-reject';
                     btnReject.textContent = 'Reject';
-                    btnReject.addEventListener('click', () => updateJobStatus(order.id || order.createdAt, 'Rejected'));
+                    btnReject.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const confirmReject = confirm('Are you sure you want to reject this print job? Resources will be fully refunded.');
+                        if (confirmReject) {
+                            updateJobStatus(order.id || order.createdAt, 'Rejected');
+                        }
+                    });
 
                     actionCell.appendChild(btnProcess);
                     actionCell.appendChild(btnReject);
@@ -224,12 +244,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     const btnComplete = document.createElement('button');
                     btnComplete.className = 'admin-btn btn-complete';
                     btnComplete.textContent = 'Complete';
-                    btnComplete.addEventListener('click', () => updateJobStatus(order.id || order.createdAt, 'Completed'));
+                    btnComplete.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        updateJobStatus(order.id || order.createdAt, 'Completed');
+                    });
 
                     const btnReject = document.createElement('button');
                     btnReject.className = 'admin-btn btn-reject';
                     btnReject.textContent = 'Reject';
-                    btnReject.addEventListener('click', () => updateJobStatus(order.id || order.createdAt, 'Rejected'));
+                    btnReject.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const confirmReject = confirm('Are you sure you want to reject this print job? Resources will be fully refunded.');
+                        if (confirmReject) {
+                            updateJobStatus(order.id || order.createdAt, 'Rejected');
+                        }
+                    });
 
                     actionCell.appendChild(btnComplete);
                     actionCell.appendChild(btnReject);
@@ -308,7 +337,151 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // Bind filter listeners
+    // ── Admin Order Drawer Controller (SCRUM-59) ──
+    const adminOrderDrawer = document.getElementById('adminOrderDrawer');
+    const closeAdminDrawerBackdrop = document.getElementById('closeAdminDrawerBackdrop');
+    const closeAdminDrawerBtn = document.getElementById('closeAdminDrawerBtn');
+    
+    const drawerAdminReroute = document.getElementById('drawerAdminReroute');
+
+    const drawerBtnProcess = document.getElementById('drawerBtnProcess');
+    const drawerBtnComplete = document.getElementById('drawerBtnComplete');
+    const drawerBtnReject = document.getElementById('drawerBtnReject');
+
+    let selectedAdminTrackingOrder = null;
+
+    const openAdminOrderDrawer = (order) => {
+        if (!adminOrderDrawer || !order) return;
+        selectedAdminTrackingOrder = order;
+
+        const drawerAdminRefId = document.getElementById('drawerAdminRefId');
+        const drawerStudentName = document.getElementById('drawerStudentName');
+        const drawerStudentDetails = document.getElementById('drawerStudentDetails');
+        const drawerStudentEmail = document.getElementById('drawerStudentEmail');
+        
+        const drawerAdminFileName = document.getElementById('drawerAdminFileName');
+        const drawerAdminPages = document.getElementById('drawerAdminPages');
+        const drawerAdminCopies = document.getElementById('drawerAdminCopies');
+        const drawerAdminColor = document.getElementById('drawerAdminColor');
+        const drawerAdminDuplex = document.getElementById('drawerAdminDuplex');
+        const drawerAdminPaper = document.getElementById('drawerAdminPaper');
+        const drawerAdminCost = document.getElementById('drawerAdminCost');
+        const drawerAdminStatusLabel = document.getElementById('drawerAdminStatusLabel');
+
+        if (drawerAdminRefId) drawerAdminRefId.textContent = order.referenceId || 'TXN-' + Math.floor(10000 + Math.random() * 90000);
+        if (drawerStudentName) drawerStudentName.textContent = order.fullName || 'Student User';
+        if (drawerStudentDetails) drawerStudentDetails.textContent = `Roll-${order.rollId || 'N/A'}`;
+        if (drawerStudentEmail) drawerStudentEmail.textContent = order.email || 'student@univ.edu';
+        
+        if (drawerAdminFileName) drawerAdminFileName.textContent = order.documentName;
+        if (drawerAdminPages) drawerAdminPages.textContent = `${order.pageRange || 'All'} (${order.pages || 10} pages)`;
+        if (drawerAdminCopies) drawerAdminCopies.textContent = `${order.copies} cop${order.copies > 1 ? 'ies' : 'y'}`;
+        if (drawerAdminColor) drawerAdminColor.textContent = order.colorMode;
+        if (drawerAdminDuplex) drawerAdminDuplex.textContent = order.duplex;
+        if (drawerAdminPaper) drawerAdminPaper.textContent = `${order.paperSize || 'A4'} (${order.orientation || 'Portrait'})`;
+        if (drawerAdminCost) {
+            drawerAdminCost.textContent = order.paymentMethod === 'Quota' ? 'Quota' : `৳ ${order.estimatedCost}`;
+        }
+
+        if (drawerAdminStatusLabel) {
+            const status = order.status || 'Pending';
+            drawerAdminStatusLabel.textContent = status;
+            drawerAdminStatusLabel.className = 'status-badge';
+            
+            let statusClass = 'processing';
+            if (status.toLowerCase() === 'completed' || status.toLowerCase() === 'ready for pickup') statusClass = 'completed';
+            if (status.toLowerCase() === 'cancelled' || status.toLowerCase() === 'rejected') statusClass = 'cancelled';
+            
+            drawerAdminStatusLabel.classList.add(statusClass);
+        }
+
+        if (drawerAdminReroute) {
+            drawerAdminReroute.value = order.printerTerminal;
+        }
+
+        const status = (order.status || 'Pending').toLowerCase();
+        if (drawerBtnProcess) drawerBtnProcess.style.display = (status === 'pending' || status === 'submitted') ? 'block' : 'none';
+        if (drawerBtnComplete) drawerBtnComplete.style.display = (status === 'processing') ? 'block' : 'none';
+        if (drawerBtnReject) {
+            drawerBtnReject.style.display = (status === 'pending' || status === 'submitted' || status === 'processing') ? 'block' : 'none';
+        }
+
+        adminOrderDrawer.classList.add('open');
+    };
+
+    const closeAdminOrderDrawer = () => {
+        adminOrderDrawer?.classList.remove('open');
+        selectedAdminTrackingOrder = null;
+    };
+
+    closeAdminDrawerBtn?.addEventListener('click', closeAdminOrderDrawer);
+    closeAdminDrawerBackdrop?.addEventListener('click', closeAdminOrderDrawer);
+
+    drawerBtnProcess?.addEventListener('click', () => {
+        if (selectedAdminTrackingOrder) {
+            updateJobStatus(selectedAdminTrackingOrder.id || selectedAdminTrackingOrder.createdAt, 'Processing');
+            closeAdminOrderDrawer();
+        }
+    });
+
+    drawerBtnComplete?.addEventListener('click', () => {
+        if (selectedAdminTrackingOrder) {
+            updateJobStatus(selectedAdminTrackingOrder.id || selectedAdminTrackingOrder.createdAt, 'Completed');
+            closeAdminOrderDrawer();
+        }
+    });
+
+    drawerBtnReject?.addEventListener('click', () => {
+        if (selectedAdminTrackingOrder) {
+            const confirmReject = confirm('Are you sure you want to reject this print job? Resources will be fully refunded.');
+            if (confirmReject) {
+                updateJobStatus(selectedAdminTrackingOrder.id || selectedAdminTrackingOrder.createdAt, 'Rejected');
+                closeAdminOrderDrawer();
+            }
+        }
+    });
+
+    // Printer Terminal Rerouting
+    drawerAdminReroute?.addEventListener('change', () => {
+        if (!selectedAdminTrackingOrder) return;
+        const newTerminal = drawerAdminReroute.value;
+        const orderId = selectedAdminTrackingOrder.id || selectedAdminTrackingOrder.createdAt;
+
+        fetch(`/api/admin/print-orders/${orderId}/reroute`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ printerTerminal: newTerminal })
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('Terminal rerouting request failed');
+            return res.json();
+        })
+        .then(() => {
+            alert(`Print request successfully rerouted to ${newTerminal}.`);
+            selectedAdminTrackingOrder.printerTerminal = newTerminal;
+            refreshAdminQueue();
+        })
+        .catch(err => {
+            console.warn('API reroute request failed, using offline fallback...', err);
+            
+            const localOrders = JSON.parse(localStorage.getItem('printOrders') || '[]');
+            const idx = localOrders.findIndex(o => o.id === orderId || o.createdAt === orderId);
+            if (idx !== -1) {
+                localOrders[idx].printerTerminal = newTerminal;
+                localStorage.setItem('printOrders', JSON.stringify(localOrders));
+                
+                alert(`Print request successfully rerouted to ${newTerminal} (Offline mode).`);
+                selectedAdminTrackingOrder.printerTerminal = newTerminal;
+                refreshAdminQueue();
+            }
+        });
+    });
+
+    // Bind filter and search listeners
+    document.getElementById('queueSearch')?.addEventListener('input', renderAdminQueueTable);
     document.getElementById('queueFilterTerminal')?.addEventListener('change', renderAdminQueueTable);
     document.getElementById('queueFilterStatus')?.addEventListener('change', renderAdminQueueTable);
 

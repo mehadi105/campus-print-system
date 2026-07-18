@@ -717,6 +717,24 @@ app.post('/api/admin/print-orders/:id/status', authenticateToken, requireAdmin, 
     });
 });
 
+// 3.5 Reroute Print Order to a different terminal (SCRUM-59)
+app.post('/api/admin/print-orders/:id/reroute', authenticateToken, requireAdmin, (req, res) => {
+    const orderId = req.params.id;
+    const { printerTerminal } = req.body;
+
+    if (!printerTerminal) return res.status(400).json({ error: 'Please specify printerTerminal.' });
+
+    db.get('SELECT * FROM print_orders WHERE id = ?', [orderId], (err, order) => {
+        if (err) return res.status(500).json({ error: 'Database error finding print order: ' + err.message });
+        if (!order) return res.status(404).json({ error: 'Print order not found.' });
+
+        db.run('UPDATE print_orders SET printerTerminal = ? WHERE id = ?', [printerTerminal, orderId], (err) => {
+            if (err) return res.status(500).json({ error: 'Database error updating terminal assignment: ' + err.message });
+            res.json({ message: `Print order successfully rerouted to ${printerTerminal}.` });
+        });
+    });
+});
+
 // 4. Get Registered Students
 app.get('/api/admin/students', authenticateToken, requireAdmin, (req, res) => {
     db.all("SELECT id, fullName, rollId, department, email, session, semester, walletBalance, usedPages, totalPages, status FROM users WHERE role = 'Student'", (err, rows) => {

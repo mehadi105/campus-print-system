@@ -99,7 +99,9 @@
                             <p class="eyebrow">Active printing tasks</p>
                             <h3>Manage Print Requests</h3>
                         </div>
-                        <div style="display: flex; gap: 10px;">
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <input type="text" id="queueSearch" placeholder="Search orders..." style="padding: 8px 14px; font-size: 0.8rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); outline: none; width: 160px; font-weight: 600;">
+                            
                             <select id="queueFilterTerminal" style="padding: 8px 10px; font-size: 0.8rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); outline: none; font-weight: 600;">
                                 <option value="All">All Terminals</option>
                                 <option value="Central Library - T1">Central Library - T1</option>
@@ -231,6 +233,97 @@
                     </div>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Admin Order Details Drawer (SCRUM-59) -->
+    <div id="adminOrderDrawer" class="admin-drawer">
+        <div class="admin-drawer-backdrop" id="closeAdminDrawerBackdrop"></div>
+        <div class="admin-drawer-content">
+            <header class="admin-drawer-header">
+                <div>
+                    <span class="eyebrow">Admin Order Panel</span>
+                    <h3 id="drawerAdminRefId">TXN-00000</h3>
+                </div>
+                <button type="button" class="drawer-close-btn" id="closeAdminDrawerBtn" aria-label="Close details">✕</button>
+            </header>
+
+            <div class="admin-drawer-scroll-area">
+                <!-- Student details -->
+                <section class="drawer-section">
+                    <h4 class="section-title">Student Profile</h4>
+                    <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 4px;">
+                        <strong id="drawerStudentName" style="font-size: 1.05rem; color: var(--text);">Ava Nguyen</strong>
+                        <span id="drawerStudentDetails" style="font-size: 0.8rem; color: var(--muted);">Roll-4010 • Computer Science</span>
+                        <span id="drawerStudentEmail" style="font-size: 0.78rem; color: var(--muted);">ava.nguyen@univ.edu</span>
+                    </div>
+                </section>
+
+                <!-- Document details -->
+                <section class="drawer-section">
+                    <h4 class="section-title">Job Specifications</h4>
+                    <div class="details-grid-card">
+                        <div class="details-row">
+                            <span class="detail-label">File Name:</span>
+                            <strong class="detail-value" id="drawerAdminFileName">Lab_Report.pdf</strong>
+                        </div>
+                        <div class="details-row">
+                            <span class="detail-label">Pages Subset:</span>
+                            <span class="detail-value" id="drawerAdminPages">All (12 pages)</span>
+                        </div>
+                        <div class="details-row">
+                            <span class="detail-label">Copies:</span>
+                            <span class="detail-value" id="drawerAdminCopies">1 copy</span>
+                        </div>
+                        <div class="details-row">
+                            <span class="detail-label">Color Mode:</span>
+                            <span class="detail-value" id="drawerAdminColor">Black & White</span>
+                        </div>
+                        <div class="details-row">
+                            <span class="detail-label">Layout:</span>
+                            <span class="detail-value" id="drawerAdminDuplex">Double-Sided</span>
+                        </div>
+                        <div class="details-row">
+                            <span class="detail-label">Paper config:</span>
+                            <span class="detail-value" id="drawerAdminPaper">A4 (Portrait)</span>
+                        </div>
+                        <div class="details-row highlight">
+                            <span class="detail-label">Estimated Cost:</span>
+                            <strong class="detail-value" id="drawerAdminCost">৳ 24.00</strong>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Terminal Routing and Control -->
+                <section class="drawer-section">
+                    <h4 class="section-title">Terminal Routing &amp; Status</h4>
+                    <div style="display: flex; flex-direction: column; gap: 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 16px; padding: 18px;">
+                        <!-- Terminal reassignment select dropdown -->
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <label for="drawerAdminReroute" style="font-size: 0.8rem; font-weight: 700; color: var(--text);">Re-route Assigned Printer:</label>
+                            <select id="drawerAdminReroute" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-weight: 600; outline: none; width: 100%;">
+                                <option value="Central Library - T1">Central Library - T1</option>
+                                <option value="CSE Lab - T2">CSE Lab - T2</option>
+                                <option value="Science Building - T3">Science Building - T3</option>
+                            </select>
+                        </div>
+
+                        <!-- Current status field -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; margin-top: 4px;">
+                            <span style="font-weight: 500; color: var(--muted);">Current Status:</span>
+                            <span class="status-badge processing" id="drawerAdminStatusLabel" style="margin: 0;">Pending</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <footer class="admin-drawer-footer" style="padding: 24px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; gap: 12px;">
+                    <button type="button" class="save-profile-btn" id="drawerBtnProcess" style="flex: 1; padding: 12px; font-weight: 700; font-size: 0.85rem; border-radius: 10px;">Process Job</button>
+                    <button type="button" class="save-profile-btn" id="drawerBtnComplete" style="flex: 1; padding: 12px; font-weight: 700; font-size: 0.85rem; border-radius: 10px; background: #10b981; border-color: #10b981;">Complete Job</button>
+                </div>
+                <button type="button" class="cancel-job-btn" id="drawerBtnReject" style="width: 100%; padding: 12px; font-weight: 700; font-size: 0.85rem; border-radius: 10px; margin: 0;">Reject &amp; Refund Job</button>
+            </footer>
         </div>
     </div>
 
