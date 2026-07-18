@@ -1,6 +1,8 @@
 node_modules/
 backend/data/users.json
 backend/data/documents.json
+backend/data/orders.json
+backend/data/payments.json
 backend/data/database.sqlite
 backend/uploads/
 .DS_Store

@@ -194,6 +194,15 @@ npm test
 npm run test:documents
 ```
 
+### Print Order API (SCRUM-46)
+
+**Create order:** `POST /api/orders`
+
+Body fields aligned with Imtiaj print order UI:
+`studentEmail`, `documentName`, `copies`, `colorMode`, `duplex`, `orientation`, `paperSize`, `pageRange`, `printerTerminal`, `pages`, `paymentMethod`, optional `estimatedCost` / `documentId`.
+
+Cost formula matches SCRUM-50 (B&W/Color × duplex × Legal surcharge).
+
 ## License
 
 ISC — see [LICENSE](LICENSE).
