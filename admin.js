@@ -1039,6 +1039,34 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
 
+    // ── Auto-polling for Real-time Data updates (every 5 seconds) ──
+    setInterval(() => {
+        refreshAdminStats();
+        
+        const activeTabLink = document.querySelector('.sidebar .nav-links .nav-item.active');
+        if (activeTabLink) {
+            const targetTabId = activeTabLink.getAttribute('href').substring(1);
+            if (targetTabId === 'queue-view') refreshAdminQueue();
+            if (targetTabId === 'printers-view') refreshAdminPrinters();
+            if (targetTabId === 'students-view') refreshAdminStudents();
+        }
+
+        // If details drawer is open for a student, refresh their details in background
+        if (selectedAdminStudent && studentDetailDrawer && studentDetailDrawer.classList.contains('open')) {
+            const studentId = selectedAdminStudent.id || selectedAdminStudent.rollId;
+            fetch(`/api/admin/students/${studentId}/transactions`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(res => res.ok ? res.json() : [])
+            .then(txns => {
+                const tbody = document.querySelector('#drawerStudentTxnTable tbody');
+                if (tbody) renderStudentTxns(tbody, txns);
+            })
+            .catch(() => {});
+        }
+    }, 5000);
+
     // ── Initialize Dashboard Loadups ──
     refreshAdminStats();
     refreshAdminQueue();

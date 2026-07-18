@@ -54,7 +54,11 @@
                     <h2>Admin Controller</h2>
                     <p id="topbar-date">Saturday, 18 Jul 2026</p>
                 </div>
-                <div class="topbar-actions">
+                <div class="topbar-actions" style="display: flex; align-items: center; gap: 16px;">
+                    <div class="live-indicator" style="display: flex; align-items: center; gap: 6px; font-size: 0.76rem; font-weight: 700; color: #10b981; background: rgba(16, 185, 129, 0.1); padding: 4px 10px; border-radius: 20px;">
+                        <span class="ping-dot" style="display: inline-block; width: 8px; height: 8px; background: #10b981; border-radius: 50%; animation: pulse-ping 2s infinite;"></span>
+                        Live Sync
+                    </div>
                     <button type="button" class="secondary-btn" id="adminLogoutBtn">🚪 Log Out</button>
                 </div>
             </header>
