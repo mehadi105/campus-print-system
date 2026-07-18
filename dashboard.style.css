@@ -2111,3 +2111,27 @@ tbody tr:hover {
         background: #334155 !important;
     }
 }
+
+/* Hide number input spinners (SCRUM-49) */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+.copies-spinner button:hover {
+    background: var(--border);
+    color: var(--text);
+}
+.copies-spinner button:active {
+    background: var(--surface-2);
+}
+
+@media (prefers-color-scheme: dark) {
+    .copies-spinner button:hover {
+        background: #2a3548 !important;
+    }
+}

@@ -848,7 +848,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const docPages = selectedDocObj.pages || 10;
-            const copies = parseInt(printCopies.value) || 1;
+            let copies = parseInt(printCopies.value);
+            if (isNaN(copies) || copies < 1) {
+                copies = 1;
+            } else if (copies > 99) {
+                copies = 99;
+                printCopies.value = 99;
+            }
             const isColor = colorModeColor.checked;
             const isDuplex = duplexDouble.checked;
 
@@ -1015,13 +1021,37 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
+        // ── Custom Copies Spinner click handlers (SCRUM-49) ──
+        const decCopiesBtn = document.getElementById('decCopiesBtn');
+        const incCopiesBtn = document.getElementById('incCopiesBtn');
+
+        decCopiesBtn?.addEventListener('click', () => {
+            let val = parseInt(printCopies.value) || 1;
+            if (val > 1) {
+                printCopies.value = val - 1;
+                updateCostEstimate();
+            }
+        });
+
+        incCopiesBtn?.addEventListener('click', () => {
+            let val = parseInt(printCopies.value) || 1;
+            if (val < 99) {
+                printCopies.value = val + 1;
+                updateCostEstimate();
+            }
+        });
+
         // Submit Print Order handler
         printOrderForm?.addEventListener('submit', (e) => {
             e.preventDefault();
             if (!selectedDocObj) return;
 
             const docPages = selectedDocObj.pages || 10;
-            const copies = parseInt(printCopies.value) || 1;
+            let copies = parseInt(printCopies.value);
+            if (isNaN(copies) || copies < 1 || copies > 99) {
+                alert('Please enter a valid number of copies between 1 and 99.');
+                return;
+            }
             const isColor = colorModeColor.checked;
             const isDuplex = duplexDouble.checked;
             

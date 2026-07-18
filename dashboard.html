@@ -655,7 +655,11 @@
                         <div class="form-grid-2" style="margin-bottom: 12px;">
                             <div class="form-group">
                                 <label for="printCopies" style="font-weight: 700; font-size: 0.82rem; color: var(--muted); display: block; margin-bottom: 6px;">Number of Copies</label>
-                                <input type="number" id="printCopies" min="1" max="99" value="1" required class="form-control">
+                                <div class="copies-spinner" style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 12px; height: 46px; background: var(--surface-2); overflow: hidden;">
+                                    <button type="button" id="decCopiesBtn" style="border: none; background: transparent; width: 40px; height: 100%; font-size: 1.2rem; font-weight: 800; color: var(--muted); cursor: pointer; transition: background 0.15s; outline: none;">−</button>
+                                    <input type="number" id="printCopies" min="1" max="99" value="1" required style="border: none; background: transparent; flex: 1; text-align: center; font-weight: 700; font-size: 0.95rem; color: var(--text); outline: none; height: 100%; width: 100%;">
+                                    <button type="button" id="incCopiesBtn" style="border: none; background: transparent; width: 40px; height: 100%; font-size: 1.2rem; font-weight: 800; color: var(--muted); cursor: pointer; transition: background 0.15s; outline: none;">＋</button>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="printPaperSize" style="font-weight: 700; font-size: 0.82rem; color: var(--muted); display: block; margin-bottom: 6px;">Paper Size</label>
